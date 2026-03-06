@@ -3,120 +3,807 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notenerfassung_V2_Diskret</title>
+    <title>Notenerfassung Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 10px; background-color: #f0f2f5; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        
-        .header-info { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.8rem; color: #555; }
-        h2 { color: #2c3e50; text-align: center; margin-bottom: 15px; font-size: 1.2rem; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th, td { padding: 6px 8px; border: 1px solid #ccc; text-align: left; }
-        
-        th { background-color: #eee; }
-        
-        .col-selbst { background-color: #e3f2fd; width: 80px; text-align: center; } 
-        .col-lehrer { background-color: #fff9c4; width: 80px; text-align: center; } 
-        
-        select { padding: 3px; border-radius: 3px; border: 1px solid #999; font-size: 0.85rem; cursor: pointer; background: white; width: 100%; }
-        
-        .btn-print { 
-            display: block; width: 100%; padding: 12px; background: #27ae60; color: white; 
-            border: none; border-radius: 5px; cursor: pointer; font-size: 1rem; margin-top: 15px;
-            font-weight: bold;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #eef1f5;
+            padding: 12px;
+            color: #2c3e50;
         }
 
-        /* PDF / DRUCK OPTIMIERUNG */
+        .app { max-width: 720px; margin: auto; }
+
+        .card {
+            background: white;
+            padding: 14px 16px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 10px;
+        }
+
+        .app-header { display: flex; justify-content: space-between; align-items: center; }
+        .app-title  { font-size: 1.25rem; font-weight: 700; }
+        .app-sub    { font-size: 0.78rem; color: #888; margin-top: 2px; }
+
+        .toolbar-row {
+            display: flex; gap: 8px; align-items: center;
+            flex-wrap: wrap; margin-bottom: 8px;
+        }
+        .toolbar-row:last-child { margin-bottom: 0; }
+
+        .section-label {
+            font-size: 0.7rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            color: #aaa; margin-bottom: 6px;
+        }
+
+        .divider { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+
+        select.ctrl, input.ctrl {
+            padding: 6px 8px; border-radius: 5px;
+            border: 1px solid #ccc; font-size: 0.85rem;
+            background: white; flex: 1; min-width: 140px; color: #2c3e50;
+        }
+        select.ctrl:focus, input.ctrl:focus {
+            outline: 2px solid #3498db; border-color: transparent;
+        }
+
+        .btn {
+            padding: 6px 12px; border: none; border-radius: 5px;
+            cursor: pointer; font-size: 0.82rem; font-weight: 600;
+            transition: filter .15s, transform .1s; white-space: nowrap;
+        }
+        .btn:hover  { filter: brightness(.88); }
+        .btn:active { transform: scale(.97); }
+        .btn-blue   { background: #3498db; color: #fff; }
+        .btn-green  { background: #27ae60; color: #fff; }
+        .btn-orange { background: #e67e22; color: #fff; }
+        .btn-red    { background: #e74c3c; color: #fff; }
+        .btn-gray   { background: #95a5a6; color: #fff; }
+        .btn-teal   { background: #16a085; color: #fff; }
+        .btn-purple { background: #8e44ad; color: #fff; }
+        .btn-dark   { background: #2c3e50; color: #fff; }
+
+        /* Tabelle */
+        .tbl-header { display: flex; justify-content: space-between; font-size: .82rem; color: #777; margin-bottom: 8px; }
+        .tbl-title  { text-align: center; font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+        th, td { padding: 6px 8px; border: 1px solid #ddd; }
+        th { background: #f5f5f5; font-weight: 600; text-align: center; font-size: .78rem; }
+        th.h-name { text-align: left; }
+
+        td.col-name   { font-weight: 500; vertical-align: middle; }
+        td.col-selbst { background: #e8f4fd; width: 95px; text-align: center; vertical-align: middle; }
+        td.col-lehrer { background: #fefce8; width: 95px; text-align: center; vertical-align: middle; }
+        td.col-del    { width: 30px; text-align: center; vertical-align: middle; }
+
+        select.note-sel {
+            padding: 3px 4px; border-radius: 4px;
+            border: 1px solid #aaa; font-size: .85rem;
+            width: 100%; cursor: pointer; background: white;
+        }
+
+        .btn-row-del {
+            background: none; border: none;
+            color: #ccc; cursor: pointer; font-size: 1rem;
+            padding: 2px 5px; border-radius: 3px; transition: color .15s;
+        }
+        .btn-row-del:hover { color: #e74c3c; }
+
+        /* Statistikleiste */
+        .stat-bar { display: flex; gap: 10px; flex-wrap: wrap; font-size: .78rem; color: #666; margin-top: 10px; align-items: center; }
+        .stat-dot  { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 3px; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 20px; right: 20px;
+            background: #2c3e50; color: #fff;
+            padding: 10px 18px; border-radius: 8px;
+            font-size: .88rem; opacity: 0;
+            transform: translateY(8px);
+            transition: opacity .25s, transform .25s;
+            z-index: 9999; max-width: 320px;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.45);
+            display: none; align-items: center;
+            justify-content: center; z-index: 1000; padding: 16px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: #fff; padding: 22px;
+            border-radius: 10px; width: 100%; max-width: 390px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.2);
+        }
+        .modal h3   { margin-bottom: 14px; font-size: 1.05rem; }
+        .modal label {
+            display: block; font-size: .8rem; font-weight: 600;
+            margin-bottom: 4px; margin-top: 12px; color: #555;
+        }
+        .modal label:first-of-type { margin-top: 0; }
+        .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+        /* Druck */
         @media print {
-            @page { size: portrait; margin: 1cm; }
-            body { background: white; margin: 0; }
-            .container { box-shadow: none; width: 100%; max-width: none; border: none; padding: 0; }
-            .btn-print { display: none; }
-            
-            /* Verhindert, dass Dropdowns im PDF wie graue Boxen aussehen */
-            select { 
-                border: none; 
-                appearance: none; 
-                -webkit-appearance: none; 
-                background: transparent; 
-                font-weight: bold; 
-                text-align: center;
+            @page { size: portrait; margin: 1.5cm; }
+            body   { background: #fff; padding: 0; }
+            .no-print { display: none !important; }
+            .app   { max-width: none; }
+            .card  { box-shadow: none; padding: 4px 0; margin-bottom: 6px; }
+            select.note-sel {
+                border: none; appearance: none;
+                -webkit-appearance: none; background: transparent;
+                font-weight: 700; text-align: center;
             }
-            .col-selbst { background-color: #f8f9fa !important; -webkit-print-color-adjust: exact; }
-            .col-lehrer { background-color: #f1f1f1 !important; -webkit-print-color-adjust: exact; }
+            td.col-selbst { background: #eff7ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            td.col-lehrer { background: #fffff0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
 <body>
+<div class="app">
 
-<div class="container">
-    <div class="header-info">
-        <span>Klasse: ________</span>
-        <span id="datum"></span>
+    <!-- BANNER -->
+    <div class="card no-print" style="padding:0;overflow:hidden;">
+        <img src="banner.jpg"
+             alt="Sportnoten erfassen"
+             style="width:100%;display:block;border-radius:10px;"
+             onerror="this.style.display='none';document.getElementById('fallbackHeader').style.display='flex'">
+        <!-- Fallback wenn kein Bild vorhanden -->
+        <div id="fallbackHeader" class="app-header" style="display:none;padding:14px 16px;">
+            <div>
+                <div class="app-title">Notenerfassung Pro</div>
+                <div class="app-sub">Kursverwaltung &middot; Notenarten &middot; Export</div>
+            </div>
+            <div style="font-size:.82rem;color:#888;" id="headerDate"></div>
+        </div>
     </div>
-    <h2>Notenabgleich (Anonymisiert)</h2>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>Schüler</th>
-                <th style="font-size: 0.7rem; text-align: center;">Selbst</th>
-                <th style="font-size: 0.7rem; text-align: center;">Lehrer</th>
-            </tr>
-        </thead>
-        <tbody id="schuelerListe">
-            </tbody>
-    </table>
 
-    <button class="btn-print" onclick="window.print()">Als PDF speichern / Drucken</button>
+    <!-- HEADER (Datum, nur sichtbar wenn Banner geladen) -->
+    <div class="card no-print" id="dateCard" style="padding:6px 16px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:.82rem;font-weight:700;color:#2c3e50;">Notenerfassung Pro</div>
+        <div style="font-size:.82rem;color:#888;" id="headerDate"></div>
+    </div>
+
+    <!-- KURS & NOTENART -->
+    <div class="card no-print">
+        <div class="section-label">Kurs</div>
+        <div class="toolbar-row">
+            <select class="ctrl" id="courseSelect" onchange="onCourseChange()"></select>
+            <button class="btn btn-blue" onclick="showModal('newCourseModal')">+ Neuer Kurs</button>
+            <button class="btn btn-red"  onclick="deleteCourse()">Loeschen</button>
+        </div>
+        <hr class="divider">
+        <div class="section-label">Notenart</div>
+        <div class="toolbar-row">
+            <select class="ctrl" id="gradeTypeSelect" onchange="onGradeTypeChange()"></select>
+            <button class="btn btn-teal" onclick="showModal('newGradeTypeModal')">+ Neue Notenart</button>
+            <button class="btn btn-red"  onclick="deleteGradeType()">Loeschen</button>
+        </div>
+    </div>
+
+    <!-- AKTIONEN -->
+    <div class="card no-print">
+        <div class="section-label">Aktionen</div>
+        <div class="toolbar-row">
+            <button class="btn btn-green"  onclick="exportExcel()">&#128202; Excel Export</button>
+            <button class="btn btn-orange" onclick="window.print()">&#128438; PDF / Drucken</button>
+            <button class="btn btn-gray"   onclick="resetCurrentGrades()">&#8635; Noten zuruecksetzen</button>
+            <button class="btn btn-purple" onclick="exportBackup()">&#128190; Backup speichern</button>
+            <button class="btn btn-dark"   onclick="triggerImport()">&#128194; Backup laden</button>
+        </div>
+        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(event)">
+        <hr class="divider">
+        <div class="section-label">Schueler hinzufuegen</div>
+        <div class="toolbar-row">
+            <input type="text" class="ctrl" id="newStudentInput"
+                   placeholder="Name eingeben ..."
+                   onkeydown="if(event.key==='Enter') addStudent()">
+            <button class="btn btn-blue" onclick="addStudent()">+ Hinzufuegen</button>
+        </div>
+    </div>
+
+    <!-- NOTENTABELLE -->
+    <div class="card" id="tableCard">
+        <div class="tbl-header">
+            <span>Kurs: <strong id="printKurs">&mdash;</strong></span>
+            <span id="printDate"></span>
+        </div>
+        <div class="tbl-title" id="tableTitle">Notenabgleich</div>
+        <table>
+            <thead>
+                <tr>
+                    <th class="h-name">Schueler</th>
+                    <th class="col-selbst">Selbst</th>
+                    <th class="col-lehrer">Lehrer</th>
+                    <th class="col-del no-print"></th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+        <div class="stat-bar no-print" id="statBar"></div>
+    </div>
+
+</div><!-- /.app -->
+
+
+<!-- MODAL: Neuer Kurs -->
+<div class="modal-overlay" id="newCourseModal">
+    <div class="modal">
+        <h3>Neuen Kurs anlegen</h3>
+        <label>Kursname</label>
+        <input type="text" class="ctrl" id="newCourseName"
+               placeholder="z.B. Klasse 10a - Mathematik" style="width:100%"
+               onkeydown="if(event.key==='Enter') createCourse()">
+        <label>Startschueler</label>
+        <select class="ctrl" id="newCourseStudents" style="width:100%">
+            <option value="default">Standardliste (Beispielklasse)</option>
+            <option value="empty">Leer beginnen</option>
+            <option value="copy">Aus aktuellem Kurs kopieren</option>
+        </select>
+        <div class="modal-btns">
+            <button class="btn btn-gray" onclick="closeModal('newCourseModal')">Abbrechen</button>
+            <button class="btn btn-blue" onclick="createCourse()">Anlegen</button>
+        </div>
+    </div>
 </div>
 
+<!-- MODAL: Neue Notenart -->
+<div class="modal-overlay" id="newGradeTypeModal">
+    <div class="modal">
+        <h3>Neue Notenart anlegen</h3>
+        <label>Vordefinierte Kategorie</label>
+        <select class="ctrl" id="gradeTypeCat" style="width:100%" onchange="onCatChange()">
+            <option value="">-- Bitte waehlen oder selbst eingeben --</option>
+            <option value="Halbjahr 1">Halbjahr 1</option>
+            <option value="Halbjahr 2">Halbjahr 2</option>
+            <option value="Zwischennote">Zwischennote</option>
+            <option value="Muendliche Pruefung">Muendliche Pruefung</option>
+            <option value="Praktische Ueberpruefung">Praktische Ueberpruefung</option>
+            <option value="Schriftliche Pruefung">Schriftliche Pruefung</option>
+            <option value="Zeugnisnote">Zeugnisnote</option>
+            <option value="Halbjahreszeugnis">Halbjahreszeugnis</option>
+            <option value="Jahreszeugnis">Jahreszeugnis</option>
+            <option value="Abschlusszeugnis">Abschlusszeugnis</option>
+            <option value="Verhalten">Verhalten</option>
+            <option value="Mitarbeit">Mitarbeit</option>
+            <option value="Sonstige">Sonstige</option>
+        </select>
+        <label>Eigene Bezeichnung</label>
+        <input type="text" class="ctrl" id="gradeTypeName"
+               placeholder="Bezeichnung eingeben ..." style="width:100%"
+               onkeydown="if(event.key==='Enter') createGradeType()">
+        <div class="modal-btns">
+            <button class="btn btn-gray" onclick="closeModal('newGradeTypeModal')">Abbrechen</button>
+            <button class="btn btn-teal" onclick="createGradeType()">Anlegen</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+
 <script>
-    // Automatisches Datum setzen
-    document.getElementById('datum').textContent = "Datum: " + new Date().toLocaleDateString('de-DE');
+// =========================================================
+// KONSTANTEN
+// =========================================================
+const STORAGE_KEY = "notenerfassung_pro_v2";
 
-    // Gekürzte Namen
-    const schueler = [
-        "Ben Al.", "Fabian Bä.", "Ivan Ba.", "Berfin Bu.", 
-        "Hannah Bu.", "Eymen Ch.", "Jesko Ka.", 
-        "Afroditi La.", "Julian Li.", "Arin Na.", 
-        "Hila Or.", "Iliana Pe.", "Hendrik Pl.", 
-        "Eliana Ro.", "Marlon Se.", "Yukta Si.", 
-        "Luis Sn.", "Mani So.", "Rania Ug.", "Axîn Yi."
-    ];
+const NOTEN_OPT = [
+    "---", "1+", "1", "1-",
+    "2+", "2", "2-",
+    "3+", "3", "3-",
+    "4+", "4", "4-",
+    "5", "6"
+];
+const STD_NOTE = "---";
 
-    const notenOptionen = ["1+", "1", "1-", "2+", "2", "2-", "3+", "3", "3-", "4+", "4", "4-", "5", "6"];
-    const standardNote = "2-";
+const DEFAULT_STUDENTS = [
+    "Ben Al.", "Fabian Bae.", "Ivan Ba.", "Berfin Bu.",
+    "Hannah Bu.", "Eymen Ch.", "Jesko Ka.",
+    "Afroditi La.", "Julian Li.", "Arin Na.",
+    "Hila Or.", "Iliana Pe.", "Hendrik Pl.",
+    "Eliana Ro.", "Marlon Se.", "Yukta Si.",
+    "Luis Sn.", "Mani So.", "Rania Ug.", "Axin Yi.",
+    "Lena We.", "Moritz Br.", "Sara Kl.", "Tobias Ri.",
+    "Emre De.", "Anna Sc.", "Niklas Vo.", "Leila Ha.",
+    "Finn Mu.", "Clara Zi."
+];
 
-    const liste = document.getElementById('schuelerListe');
+const DEFAULT_GT = [
+    "Halbjahr 1", "Zwischennote", "Halbjahr 2", "Zeugnisnote"
+];
 
-    schueler.forEach(name => {
-        let row = document.createElement('tr');
-        
-        let tdName = document.createElement('td');
-        tdName.textContent = name;
-        row.appendChild(tdName);
+const NOTE_COLORS = {
+    "1+":"#1a7f37","1":"#27ae60","1-":"#52be80",
+    "2+":"#3498db","2":"#2980b9","2-":"#5dade2",
+    "3+":"#f39c12","3":"#e67e22","3-":"#f0a500",
+    "4+":"#e74c3c","4":"#c0392b","4-":"#ec7063",
+    "5":"#8e44ad","6":"#2c3e50"
+};
 
-        const createSelect = (className) => {
-            let td = document.createElement('td');
-            td.className = className;
-            let sel = document.createElement('select');
-            notenOptionen.forEach(n => {
-                let opt = document.createElement('option');
-                opt.value = n; opt.textContent = n;
-                if (n === standardNote) opt.selected = true;
-                sel.appendChild(opt);
-            });
-            td.appendChild(sel);
-            return td;
-        };
+// =========================================================
+// ZUSTAND
+// =========================================================
+let state = { courses: {}, currentCourseId: null, currentGradeTypeId: null };
 
-        row.appendChild(createSelect('col-selbst'));
-        row.appendChild(createSelect('col-lehrer'));
-        liste.appendChild(row);
+// =========================================================
+// PERSISTENZ
+// =========================================================
+function saveState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch(e) { toast("Speichern fehlgeschlagen: " + e.message); }
+}
+
+function loadState() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) state = JSON.parse(raw);
+    } catch(e) { console.warn("Laden fehlgeschlagen:", e); }
+}
+
+// =========================================================
+// HILFSFUNKTIONEN
+// =========================================================
+function uid() {
+    return "_" + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+}
+
+function currentCourse() { return state.courses[state.currentCourseId]; }
+
+function currentGradeType() {
+    const c = currentCourse();
+    return c ? c.gradeTypes.find(g => g.id === state.currentGradeTypeId) : null;
+}
+
+// =========================================================
+// INIT
+// =========================================================
+function init() {
+    const now = new Date().toLocaleDateString("de-DE");
+    document.getElementById("headerDate").textContent = "Stand: " + now;
+    document.getElementById("printDate").textContent  = "Datum: " + now;
+
+    loadState();
+
+    if (Object.keys(state.courses).length === 0) {
+        createDefaultCourse();
+    } else {
+        // Sanity-Check: IDs pruefen
+        if (!state.courses[state.currentCourseId]) {
+            state.currentCourseId = Object.keys(state.courses)[0];
+        }
+        const c = currentCourse();
+        if (!c.gradeTypes.find(g => g.id === state.currentGradeTypeId)) {
+            state.currentGradeTypeId = c.gradeTypes[0]?.id || null;
+        }
+    }
+
+    renderCourseSelect();
+    renderGradeTypeSelect();
+    renderTable();
+}
+
+function createDefaultCourse() {
+    const id = uid();
+    const gts = DEFAULT_GT.map(name => ({ id: uid(), name }));
+    state.courses[id] = {
+        name: "Mein Kurs",
+        students: [...DEFAULT_STUDENTS],
+        gradeTypes: gts,
+        grades: {}
+    };
+    state.currentCourseId = id;
+    state.currentGradeTypeId = gts[0].id;
+    saveState();
+}
+
+// =========================================================
+// KURS-VERWALTUNG
+// =========================================================
+function renderCourseSelect() {
+    const sel = document.getElementById("courseSelect");
+    sel.innerHTML = "";
+    Object.entries(state.courses).forEach(([id, c]) => {
+        const o = document.createElement("option");
+        o.value = id; o.textContent = c.name;
+        if (id === state.currentCourseId) o.selected = true;
+        sel.appendChild(o);
     });
-</script>
+}
 
+function onCourseChange() {
+    state.currentCourseId = document.getElementById("courseSelect").value;
+    const c = currentCourse();
+    state.currentGradeTypeId = c.gradeTypes[0]?.id || null;
+    saveState(); renderGradeTypeSelect(); renderTable();
+}
+
+function createCourse() {
+    const name = document.getElementById("newCourseName").value.trim();
+    if (!name) { toast("Bitte einen Kursnamen eingeben!"); return; }
+
+    const mode = document.getElementById("newCourseStudents").value;
+    let students = [];
+    if (mode === "default") students = [...DEFAULT_STUDENTS];
+    else if (mode === "copy" && state.currentCourseId) {
+        students = [...(currentCourse().students || [])];
+    }
+
+    const id = uid();
+    const gts = DEFAULT_GT.map(n => ({ id: uid(), name: n }));
+    state.courses[id] = { name, students, gradeTypes: gts, grades: {} };
+    state.currentCourseId = id;
+    state.currentGradeTypeId = gts[0].id;
+
+    saveState(); renderCourseSelect(); renderGradeTypeSelect(); renderTable();
+    closeModal("newCourseModal");
+    toast('Kurs "' + name + '" angelegt.');
+}
+
+function deleteCourse() {
+    const keys = Object.keys(state.courses);
+    if (keys.length <= 1) { toast("Mindestens ein Kurs muss vorhanden bleiben!"); return; }
+
+    const c = currentCourse();
+    if (!confirm('Kurs "' + c.name + '" wirklich loeschen? Alle Noten gehen verloren!')) return;
+
+    delete state.courses[state.currentCourseId];
+    state.currentCourseId = Object.keys(state.courses)[0];
+    const nc = currentCourse();
+    state.currentGradeTypeId = nc.gradeTypes[0]?.id || null;
+
+    saveState(); renderCourseSelect(); renderGradeTypeSelect(); renderTable();
+    toast("Kurs geloescht.");
+}
+
+// =========================================================
+// NOTENART-VERWALTUNG
+// =========================================================
+function renderGradeTypeSelect() {
+    const sel = document.getElementById("gradeTypeSelect");
+    sel.innerHTML = "";
+    const c = currentCourse();
+    if (!c || !c.gradeTypes.length) {
+        sel.innerHTML = '<option>-- Keine Notenart --</option>';
+        return;
+    }
+    c.gradeTypes.forEach(gt => {
+        const o = document.createElement("option");
+        o.value = gt.id; o.textContent = gt.name;
+        if (gt.id === state.currentGradeTypeId) o.selected = true;
+        sel.appendChild(o);
+    });
+}
+
+function onGradeTypeChange() {
+    state.currentGradeTypeId = document.getElementById("gradeTypeSelect").value;
+    saveState(); renderTable();
+}
+
+function onCatChange() {
+    const val = document.getElementById("gradeTypeCat").value;
+    if (val) document.getElementById("gradeTypeName").value = val;
+}
+
+function createGradeType() {
+    const name = document.getElementById("gradeTypeName").value.trim();
+    if (!name) { toast("Bitte eine Bezeichnung eingeben!"); return; }
+
+    const c = currentCourse();
+    const id = uid();
+    c.gradeTypes.push({ id, name });
+    state.currentGradeTypeId = id;
+
+    saveState(); renderGradeTypeSelect(); renderTable();
+    closeModal("newGradeTypeModal");
+    toast('Notenart "' + name + '" angelegt.');
+}
+
+function deleteGradeType() {
+    const c = currentCourse();
+    if (c.gradeTypes.length <= 1) { toast("Mindestens eine Notenart muss vorhanden bleiben!"); return; }
+
+    const gt = currentGradeType();
+    if (!confirm('Notenart "' + gt.name + '" loeschen? Alle zugehoerigen Noten gehen verloren!')) return;
+
+    c.gradeTypes = c.gradeTypes.filter(g => g.id !== state.currentGradeTypeId);
+    c.students.forEach(s => {
+        if (c.grades[s]) delete c.grades[s][state.currentGradeTypeId];
+    });
+    state.currentGradeTypeId = c.gradeTypes[0].id;
+
+    saveState(); renderGradeTypeSelect(); renderTable();
+    toast("Notenart geloescht.");
+}
+
+// =========================================================
+// SCHUELER-VERWALTUNG
+// =========================================================
+function addStudent() {
+    const inp = document.getElementById("newStudentInput");
+    const name = inp.value.trim();
+    if (!name) { toast("Bitte einen Namen eingeben!"); return; }
+
+    const c = currentCourse();
+    if (c.students.includes(name)) { toast("Dieser Schueler ist bereits vorhanden!"); return; }
+
+    c.students.push(name);
+    inp.value = "";
+    saveState(); renderTable();
+    toast('"' + name + '" hinzugefuegt.');
+}
+
+function removeStudent(name) {
+    if (!confirm('Schueler "' + name + '" entfernen?')) return;
+    const c = currentCourse();
+    c.students = c.students.filter(s => s !== name);
+    delete c.grades[name];
+    saveState(); renderTable();
+}
+
+// =========================================================
+// NOTEN
+// =========================================================
+function getGrade(student, field) {
+    const c = currentCourse();
+    return c.grades?.[student]?.[state.currentGradeTypeId]?.[field] || STD_NOTE;
+}
+
+function setGrade(student, field, value) {
+    const c = currentCourse();
+    if (!c.grades[student]) c.grades[student] = {};
+    if (!c.grades[student][state.currentGradeTypeId]) c.grades[student][state.currentGradeTypeId] = {};
+    c.grades[student][state.currentGradeTypeId][field] = value;
+    saveState(); updateStats();
+}
+
+function resetCurrentGrades() {
+    const gt = currentGradeType();
+    if (!gt) return;
+    if (!confirm('Alle Noten fuer "' + gt.name + '" zuruecksetzen?')) return;
+
+    const c = currentCourse();
+    c.students.forEach(s => {
+        if (c.grades[s]) delete c.grades[s][state.currentGradeTypeId];
+    });
+    saveState(); renderTable();
+    toast("Noten zurueckgesetzt.");
+}
+
+// =========================================================
+// TABELLE
+// =========================================================
+function renderTable() {
+    const c = currentCourse();
+    if (!c) return;
+
+    const gt = currentGradeType();
+    document.getElementById("printKurs").textContent  = c.name;
+    document.getElementById("tableTitle").textContent = "Notenabgleich" + (gt ? ": " + gt.name : "");
+
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+
+    c.students.forEach(name => {
+        const tr = document.createElement("tr");
+
+        // Name
+        const tdN = document.createElement("td");
+        tdN.className = "col-name";
+        tdN.textContent = name;
+        tr.appendChild(tdN);
+
+        // Selbst + Lehrer
+        ["selbst", "lehrer"].forEach(field => {
+            const td  = document.createElement("td");
+            td.className = field === "selbst" ? "col-selbst" : "col-lehrer";
+            const sel = document.createElement("select");
+            sel.className = "note-sel";
+            const cur = getGrade(name, field);
+            NOTEN_OPT.forEach(n => {
+                const o = document.createElement("option");
+                o.value = n; o.textContent = n;
+                if (n === cur) o.selected = true;
+                sel.appendChild(o);
+            });
+            sel.addEventListener("change", () => setGrade(name, field, sel.value));
+            td.appendChild(sel);
+            tr.appendChild(td);
+        });
+
+        // Loeschen
+        const tdD = document.createElement("td");
+        tdD.className = "col-del no-print";
+        const btn = document.createElement("button");
+        btn.className = "btn-row-del";
+        btn.title = "Schueler entfernen";
+        btn.textContent = "x";
+        btn.onclick = () => removeStudent(name);
+        tdD.appendChild(btn);
+        tr.appendChild(tdD);
+
+        tbody.appendChild(tr);
+    });
+
+    updateStats();
+}
+
+function updateStats() {
+    const c  = currentCourse();
+    const bar = document.getElementById("statBar");
+    if (!c) { bar.innerHTML = ""; return; }
+
+    const counts = {};
+    NOTEN_OPT.forEach(n => { if (n !== STD_NOTE) counts[n] = 0; });
+    c.students.forEach(s => {
+        const v = getGrade(s, "lehrer");
+        if (v !== STD_NOTE && counts[v] !== undefined) counts[v]++;
+    });
+
+    bar.innerHTML = '<strong style="margin-right:6px;font-size:.78rem;">Lehrernoten:</strong>';
+    let any = false;
+    Object.entries(counts).forEach(([note, cnt]) => {
+        if (cnt > 0) {
+            any = true;
+            const sp = document.createElement("span");
+            sp.style.cssText = "display:flex;align-items:center;gap:3px;";
+            sp.innerHTML =
+                '<span class="stat-dot" style="background:' + (NOTE_COLORS[note]||"#ccc") + '"></span>' +
+                note + ": <strong>" + cnt + "</strong>";
+            bar.appendChild(sp);
+        }
+    });
+    if (!any) {
+        const sp = document.createElement("span");
+        sp.style.color = "#aaa";
+        sp.textContent = "Noch keine Noten eingetragen";
+        bar.appendChild(sp);
+    }
+}
+
+// =========================================================
+// EXCEL EXPORT (SheetJS)
+// =========================================================
+function exportExcel() {
+    if (typeof XLSX === "undefined") {
+        toast("Excel-Bibliothek noch nicht geladen – bitte kurz warten.");
+        return;
+    }
+    const c  = currentCourse();
+    const gt = currentGradeType();
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Aktuelle Notenart
+    const s1 = [
+        ["Kurs:", c.name, "", "Notenart:", gt ? gt.name : "---"],
+        ["Datum:", new Date().toLocaleDateString("de-DE")],
+        [],
+        ["Schueler", "Selbst", "Lehrer"]
+    ];
+    c.students.forEach(name => s1.push([name, getGrade(name, "selbst"), getGrade(name, "lehrer")]));
+    const ws1 = XLSX.utils.aoa_to_sheet(s1);
+    ws1["!cols"] = [{ wch: 22 }, { wch: 10 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, ws1, (gt ? gt.name : "Noten").substring(0, 31));
+
+    // Sheet 2: Gesamtuebersicht
+    const hdr = ["Schueler"];
+    c.gradeTypes.forEach(g => { hdr.push(g.name + " (S)"); hdr.push(g.name + " (L)"); });
+    const s2 = [
+        ["Kurs:", c.name],
+        ["Datum:", new Date().toLocaleDateString("de-DE")],
+        [],
+        hdr
+    ];
+    c.students.forEach(name => {
+        const row = [name];
+        c.gradeTypes.forEach(g => {
+            row.push(c.grades?.[name]?.[g.id]?.selbst || "---");
+            row.push(c.grades?.[name]?.[g.id]?.lehrer || "---");
+        });
+        s2.push(row);
+    });
+    const ws2 = XLSX.utils.aoa_to_sheet(s2);
+    ws2["!cols"] = hdr.map((_, i) => ({ wch: i === 0 ? 22 : 14 }));
+    XLSX.utils.book_append_sheet(wb, ws2, "Gesamtuebersicht");
+
+    const safe  = c.name.replace(/[^a-zA-Z0-9]/g, "_");
+    const datum = new Date().toLocaleDateString("de-DE").replace(/\./g, "-");
+    XLSX.writeFile(wb, "Noten_" + safe + "_" + datum + ".xlsx");
+    toast("Excel-Datei heruntergeladen.");
+}
+
+// =========================================================
+// BACKUP JSON
+// =========================================================
+function exportBackup() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url;
+    a.download = "Notenerfassung_Backup_" + new Date().toLocaleDateString("de-DE").replace(/\./g, "-") + ".json";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast("Backup gespeichert.");
+}
+
+function triggerImport() { document.getElementById("importFileInput").click(); }
+
+function handleImportFile(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const imp = JSON.parse(e.target.result);
+            if (!imp.courses) throw new Error("Kein gueltiges Backup-Format");
+            if (!confirm("Backup laden? Aktuelle Daten werden ueberschrieben!")) return;
+
+            state = imp;
+            if (!state.courses[state.currentCourseId])
+                state.currentCourseId = Object.keys(state.courses)[0];
+            const c = currentCourse();
+            if (!c.gradeTypes.find(g => g.id === state.currentGradeTypeId))
+                state.currentGradeTypeId = c.gradeTypes[0]?.id || null;
+
+            saveState(); renderCourseSelect(); renderGradeTypeSelect(); renderTable();
+            toast("Backup geladen.");
+        } catch(err) { toast("Fehler: " + err.message); }
+    };
+    reader.readAsText(file);
+    evt.target.value = "";
+}
+
+// =========================================================
+// MODAL
+// =========================================================
+function showModal(id) {
+    if (id === "newCourseModal")    document.getElementById("newCourseName").value = "";
+    if (id === "newGradeTypeModal") {
+        document.getElementById("gradeTypeCat").value  = "";
+        document.getElementById("gradeTypeName").value = "";
+    }
+    document.getElementById(id).classList.add("show");
+    const inp = document.querySelector("#" + id + " input.ctrl");
+    if (inp) setTimeout(() => inp.focus(), 60);
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove("show"); }
+
+document.querySelectorAll(".modal-overlay").forEach(el =>
+    el.addEventListener("click", e => { if (e.target === el) el.classList.remove("show"); })
+);
+document.addEventListener("keydown", e => {
+    if (e.key === "Escape")
+        document.querySelectorAll(".modal-overlay.show").forEach(el => el.classList.remove("show"));
+});
+
+// =========================================================
+// TOAST
+// =========================================================
+let _tt = null;
+function toast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    if (_tt) clearTimeout(_tt);
+    _tt = setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+// =========================================================
+// START
+// =========================================================
+init();
+</script>
 </body>
 </html>
