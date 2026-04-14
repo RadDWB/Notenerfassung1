@@ -89,9 +89,15 @@
     .brand-logo {
       display: block;
       height: 44px;
-      width: auto;
-      filter: brightness(0) invert(1);
+      width: 200px;
+      background-color: var(--text-1);
+      -webkit-mask: url('Gradus.png') no-repeat left center / contain;
+      mask: url('Gradus.png') no-repeat left center / contain;
       opacity: 0.92;
+    }
+    [data-theme="light"] .brand-logo {
+      background-color: var(--accent);
+      opacity: 1;
     }
     .brand-fallback { display: none; }
     .brand-name {
@@ -777,9 +783,8 @@
   <!-- ==================== SIDEBAR ==================== -->
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <img src="Gradus.png" alt="Gradus" class="brand-logo"
-           onerror="this.style.display='none';document.querySelector('.brand-fallback').style.display='block'">
-      <div class="brand-fallback">
+      <div class="brand-logo" id="brandLogo"></div>
+      <div class="brand-fallback" id="brandFallback">
         <div class="brand-name">Grad<span>us</span></div>
         <div class="brand-sub">Notenerfassung leicht gemacht</div>
       </div>
@@ -860,6 +865,11 @@
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
             Hinzufügen
           </button>
+          <button class="btn" onclick="triggerStudentImport()" title="Schülerliste aus Excel oder CSV importieren">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M8 5v6"/></svg>
+            Liste importieren
+          </button>
+          <input type="file" id="studentImportInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleStudentImport(event)">
         </div>
         <div class="toolbar-right">
           <button class="btn btn-undo" id="undoBtn" onclick="undo()" disabled title="Letzte Aktion rückgängig (Strg+Z)">
@@ -1688,6 +1698,85 @@ function toggleTheme() {
   const saved = localStorage.getItem("gradus_theme");
   if (saved) document.documentElement.setAttribute("data-theme", saved);
 })();
+
+// =====================================================
+// LOGO FALLBACK CHECK
+// =====================================================
+(function() {
+  const img = new Image();
+  img.onerror = () => {
+    const l = document.getElementById('brandLogo');
+    const f = document.getElementById('brandFallback');
+    if (l) l.style.display = 'none';
+    if (f) f.style.display = 'block';
+  };
+  img.src = 'Gradus.png';
+})();
+
+// =====================================================
+// SCHÜLERLISTEN-IMPORT (Excel / CSV)
+// =====================================================
+function triggerStudentImport() {
+  document.getElementById('studentImportInput').click();
+}
+
+function handleStudentImport(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  if (ext === 'csv') {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const lines = e.target.result.split(/\r?\n/);
+      const names = lines
+        .map(l => l.split(/[;,\t]/)[0].trim().replace(/^["']|["']$/g, ''))
+        .filter(n => n && n.length > 1);
+      importStudentNames(names, file.name);
+    };
+    reader.readAsText(file, 'UTF-8');
+  } else {
+    // Excel via SheetJS
+    if (typeof XLSX === 'undefined') { toast('Excel-Bibliothek noch nicht geladen — kurz warten.'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb   = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        // First column, skip header row if it looks like a header
+        const raw = rows.map(r => String(r[0] || '').trim()).filter(n => n.length > 1);
+        // Skip if first row looks like a header (no digits, common keywords)
+        const names = /^(name|schüler|vorname|nachname|nr\.|#)/i.test(raw[0]) ? raw.slice(1) : raw;
+        importStudentNames(names, file.name);
+      } catch(err) { toast('Fehler beim Lesen: ' + err.message); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  evt.target.value = '';
+}
+
+function importStudentNames(names, filename) {
+  if (!names.length) { toast('Keine Namen gefunden.'); return; }
+  const c = currentCourse();
+  const existing = new Set(c.students);
+  const neu  = names.filter(n => !existing.has(n));
+  const dupl = names.length - neu.length;
+
+  if (!neu.length) { toast('Alle Namen bereits vorhanden.'); return; }
+
+  const msg = dupl > 0
+    ? `${neu.length} Namen importieren? (${dupl} bereits vorhanden, werden übersprungen)`
+    : `${neu.length} Namen aus "${filename}" importieren?`;
+
+  if (!confirm(msg)) return;
+  pushHistory();
+  neu.forEach(n => c.students.push(n));
+  saveState();
+  renderTable();
+  toast(`${neu.length} Schüler importiert.`);
+}
 
 // =====================================================
 // START
