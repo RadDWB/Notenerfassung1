@@ -514,33 +514,31 @@
 
     .info-tooltip {
       position: absolute;
-      bottom: calc(100% + 10px);
-      left: 50%;
-      transform: translateX(-50%);
+      top: calc(100% + 10px);
+      left: 0;
+      transform: translateY(4px);
       background: var(--surface-raised);
       border: 1px solid var(--border-strong);
       border-radius: var(--radius);
       padding: 12px 14px;
-      width: 240px;
+      width: 250px;
       font-size: 0.74rem;
       color: var(--text-2);
       line-height: 1.6;
       box-shadow: 0 8px 24px rgba(0,0,0,0.3);
       pointer-events: none;
       opacity: 0;
-      transform: translateX(-50%) translateY(4px);
       transition: opacity 0.15s, transform 0.15s;
-      z-index: 100;
+      z-index: 200;
       white-space: normal;
     }
-    .info-tooltip::after {
+    .info-tooltip::before {
       content: '';
       position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
+      bottom: 100%;
+      left: 18px;
       border: 5px solid transparent;
-      border-top-color: var(--border-strong);
+      border-bottom-color: var(--border-strong);
     }
     .info-tooltip strong {
       display: block;
@@ -566,7 +564,7 @@
     .info-wrap:hover .info-tooltip,
     .info-icon:focus + .info-tooltip {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translateY(0);
     }
 
     /* =============================================
@@ -679,7 +677,7 @@
     td.td-lehrer { background: rgba(245,166,35,0.04); }
 
     .note-sel {
-      padding: 10px 8px;
+      padding: 10px 6px;
       border-radius: 8px;
       border: 1px solid var(--border);
       background: var(--surface-raised);
@@ -690,12 +688,14 @@
       cursor: pointer;
       outline: none;
       width: 82px;
-      min-height: 44px;
+      height: 44px;
       text-align: center;
       transition: border-color 0.12s, color 0.12s;
     }
     .note-sel:focus { border-color: rgba(200,242,65,0.4); }
-    .note-sel option { background: #1C1E21; }
+    /* Option colors only in dark mode */
+    :root:not([data-theme="light"]) .note-sel option { background: #1C1E21; color: #F2F0EB; }
+    [data-theme="light"] .note-sel { background: #ffffff; color: #18181A; }
 
     /* Comment field in name cell */
     .student-name-wrap { display: flex; flex-direction: column; gap: 4px; }
@@ -1330,6 +1330,7 @@ function renderCourseList() {
 }
 
 function selectCourse(id) {
+  if (state.currentCourseId === id) return; // already active — don't re-render (preserves dblclick)
   state.currentCourseId = id;
   const c = currentCourse();
   state.currentGradeTypeId = c.gradeTypes[0]?.id || null;
