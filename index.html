@@ -552,10 +552,33 @@
 
     tbody tr {
       border-bottom: 1px solid var(--border);
-      transition: background 0.08s;
+      transition: background 0.12s, box-shadow 0.12s;
+      cursor: pointer;
+      position: relative;
     }
     tbody tr:last-child { border-bottom: none; }
-    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    tbody tr:hover { background: rgba(255,255,255,0.025); }
+
+    tbody tr.row-active {
+      background: rgba(200,242,65,0.07);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+    tbody tr.row-active td.td-name {
+      color: var(--accent);
+    }
+    tbody tr.row-active .note-sel {
+      border-color: rgba(200,242,65,0.3);
+      background: rgba(200,242,65,0.06);
+    }
+    [data-theme="light"] tbody tr.row-active {
+      background: rgba(45,69,112,0.07);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+    [data-theme="light"] tbody tr.row-active td.td-name { color: var(--accent); }
+    [data-theme="light"] tbody tr.row-active .note-sel {
+      border-color: rgba(45,69,112,0.3);
+      background: rgba(45,69,112,0.05);
+    }
 
     td {
       padding: 9px 16px;
@@ -1377,6 +1400,14 @@ function renderTable() {
 
   c.students.forEach((name, idx) => {
     const tr = document.createElement("tr");
+
+    // Row click → activate
+    tr.addEventListener("click", (e) => {
+      if (e.target.matches("select,button,svg,path,rect,circle")) return;
+      const wasActive = tr.classList.contains("row-active");
+      document.querySelectorAll("#tableBody tr.row-active").forEach(r => r.classList.remove("row-active"));
+      if (!wasActive) tr.classList.add("row-active");
+    });
 
     // Index + Name
     const tdN = document.createElement("td");
