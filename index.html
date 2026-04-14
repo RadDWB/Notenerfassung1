@@ -154,6 +154,53 @@
       background: rgba(242,239,233,0.6);
     }
 
+    /* Custom Select Dropdown */
+    .cs-wrap { position: relative; width: 100%; }
+    .cs-trigger {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-1);
+      font-size: 0.83rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      transition: border-color 0.12s, box-shadow 0.12s;
+    }
+    .cs-trigger:hover { border-color: var(--border-strong); }
+    .cs-trigger:focus { outline: none; border-color: rgba(200,242,65,0.5); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .cs-arrow { color: var(--text-3); transition: transform 0.15s; display: flex; }
+    .cs-wrap.open .cs-arrow { transform: rotate(180deg); }
+    .cs-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: var(--surface-raised);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      z-index: 500;
+      overflow: hidden;
+      display: none;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .cs-wrap.open .cs-dropdown { display: block; }
+    .cs-option {
+      padding: 9px 12px;
+      font-size: 0.83rem;
+      cursor: pointer;
+      color: var(--text-1);
+      transition: background 0.1s;
+    }
+    .cs-option:hover { background: var(--surface-hover); }
+    .cs-option.selected { color: var(--accent); font-weight: 500; }
+
     /* Theme toggle */
     .theme-toggle {
       display: inline-flex;
@@ -1239,6 +1286,7 @@ function init() {
   }
 
   renderAll();
+  initCustomSelects();
 }
 
 function createDefaultCourse() {
@@ -1744,6 +1792,92 @@ function handleImportFile(evt) {
 }
 
 // =====================================================
+// CUSTOM SELECT — replaces native <select> in modals
+// =====================================================
+function initCustomSelects() {
+  document.querySelectorAll('.modal select.input-field').forEach(sel => {
+    if (sel._csSync) return; // already initialized
+
+    // Wrap
+    const wrap = document.createElement('div');
+    wrap.className = 'cs-wrap';
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(sel);
+    sel.style.display = 'none';
+
+    // Trigger button
+    const trigger = document.createElement('div');
+    trigger.className = 'cs-trigger';
+    trigger.tabIndex = 0;
+    const label = document.createElement('span');
+    label.className = 'cs-label';
+    const arrow = document.createElement('span');
+    arrow.className = 'cs-arrow';
+    arrow.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>';
+    trigger.appendChild(label);
+    trigger.appendChild(arrow);
+    wrap.appendChild(trigger);
+
+    // Dropdown container
+    const dropdown = document.createElement('div');
+    dropdown.className = 'cs-dropdown';
+    wrap.appendChild(dropdown);
+
+    function syncFromNative() {
+      const selIdx = sel.selectedIndex;
+      label.textContent = sel.options[selIdx] ? sel.options[selIdx].text : '';
+      dropdown.innerHTML = '';
+      Array.from(sel.options).forEach((opt, i) => {
+        const item = document.createElement('div');
+        item.className = 'cs-option' + (i === selIdx ? ' selected' : '');
+        item.textContent = opt.text;
+        item.addEventListener('mousedown', (e) => {
+          e.preventDefault(); // keep focus on trigger
+          sel.value = opt.value;
+          sel.dispatchEvent(new Event('change')); // fire onchange (e.g. onCatChange)
+          wrap.classList.remove('open');
+          syncFromNative();
+        });
+        dropdown.appendChild(item);
+      });
+    }
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = wrap.classList.contains('open');
+      // Close all
+      document.querySelectorAll('.cs-wrap.open').forEach(w => w.classList.remove('open'));
+      if (!isOpen) {
+        syncFromNative();
+        wrap.classList.add('open');
+      }
+    });
+
+    trigger.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        trigger.click();
+      }
+      if (e.key === 'Escape') wrap.classList.remove('open');
+    });
+
+    sel._csSync = syncFromNative;
+    syncFromNative();
+  });
+}
+
+function syncCustomSelects(modalId) {
+  document.querySelectorAll('#' + modalId + ' select.input-field').forEach(sel => {
+    if (sel._csSync) sel._csSync();
+  });
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', () => {
+  document.querySelectorAll('.cs-wrap.open').forEach(w => w.classList.remove('open'));
+});
+
+// =====================================================
 // MODAL
 // =====================================================
 function showModal(id) {
@@ -1753,6 +1887,7 @@ function showModal(id) {
     document.getElementById("gradeTypeName").value = "";
   }
   document.getElementById(id).classList.add("show");
+  syncCustomSelects(id);
   const inp = document.querySelector("#" + id + " input.input-field");
   if (inp) setTimeout(() => inp.focus(), 60);
 }
