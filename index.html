@@ -673,27 +673,56 @@
       font-weight: 500;
       color: var(--text-1);
     }
-    td.td-grade { text-align: center; width: 110px; }
+    td.td-grade { text-align: center; width: 130px; }
     td.td-del { text-align: center; width: 44px; }
     td.td-selbst { background: rgba(96,165,250,0.04); }
     td.td-lehrer { background: rgba(245,166,35,0.04); }
 
     .note-sel {
-      padding: 4px 6px;
-      border-radius: 6px;
+      padding: 10px 8px;
+      border-radius: 8px;
       border: 1px solid var(--border);
       background: var(--surface-raised);
       color: var(--text-1);
-      font-size: 0.82rem;
+      font-size: 1rem;
+      font-weight: 600;
       font-family: inherit;
       cursor: pointer;
       outline: none;
-      width: 68px;
+      width: 82px;
+      min-height: 44px;
       text-align: center;
       transition: border-color 0.12s, color 0.12s;
     }
     .note-sel:focus { border-color: rgba(200,242,65,0.4); }
     .note-sel option { background: #1C1E21; }
+
+    /* Comment field in name cell */
+    .student-name-wrap { display: flex; flex-direction: column; gap: 4px; }
+    .student-name-text { font-size: 0.84rem; font-weight: 500; color: var(--text-1); }
+    .comment-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid transparent;
+      color: var(--text-3);
+      font-size: 0.73rem;
+      font-family: inherit;
+      outline: none;
+      padding: 1px 0 2px;
+      transition: border-color 0.12s, color 0.12s;
+      min-width: 0;
+    }
+    .comment-input::placeholder { color: var(--text-3); opacity: 0.4; }
+    .comment-input:focus {
+      border-bottom-color: var(--border-strong);
+      color: var(--text-2);
+    }
+    .comment-input:not(:placeholder-shown) {
+      color: var(--text-2);
+      border-bottom-color: var(--border);
+    }
+    [data-theme="light"] .note-sel option { background: #F7F4F0; }
 
     .btn-row-del {
       background: none;
@@ -1474,6 +1503,19 @@ function setGrade(student, field, value) {
   updateStats();
 }
 
+function getComment(student) {
+  const c = currentCourse();
+  return c.comments?.[student]?.[state.currentGradeTypeId] || "";
+}
+
+function setComment(student, value) {
+  const c = currentCourse();
+  if (!c.comments) c.comments = {};
+  if (!c.comments[student]) c.comments[student] = {};
+  c.comments[student][state.currentGradeTypeId] = value;
+  saveState();
+}
+
 function applyNoteColor(sel) {
   const val   = sel.value;
   const color = (val !== STD_NOTE && NOTE_COLORS[val]) ? NOTE_COLORS[val] : null;
@@ -1532,10 +1574,23 @@ function renderTable() {
       if (!wasActive) tr.classList.add("row-active");
     });
 
-    // Index + Name
+    // Index + Name + Comment
     const tdN = document.createElement("td");
     tdN.className = "td-name";
-    tdN.innerHTML = `<span style="color:var(--text-3);font-size:0.72rem;margin-right:10px;font-variant-numeric:tabular-nums;">${String(idx+1).padStart(2,"0")}</span>${name}`;
+    const wrap = document.createElement("div");
+    wrap.className = "student-name-wrap";
+    wrap.innerHTML = `<div class="student-name-text"><span style="color:var(--text-3);font-size:0.72rem;margin-right:10px;font-variant-numeric:tabular-nums;">${String(idx+1).padStart(2,"0")}</span>${name}</div>`;
+    const commentInp = document.createElement("input");
+    commentInp.type = "text";
+    commentInp.className = "comment-input";
+    commentInp.placeholder = "Kommentar …";
+    commentInp.value = getComment(name);
+    commentInp.maxLength = 120;
+    commentInp.addEventListener("blur", () => setComment(name, commentInp.value.trim()));
+    commentInp.addEventListener("keydown", (e) => { if (e.key === "Enter") commentInp.blur(); e.stopPropagation(); });
+    commentInp.addEventListener("click", (e) => e.stopPropagation());
+    wrap.appendChild(commentInp);
+    tdN.appendChild(wrap);
     tr.appendChild(tdN);
 
     // Selbst + Lehrer
