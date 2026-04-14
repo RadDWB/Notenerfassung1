@@ -260,6 +260,18 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .course-item-name-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--accent);
+      color: var(--accent);
+      font-size: 0.82rem;
+      font-family: inherit;
+      outline: none;
+      padding: 0 0 1px;
+      min-width: 0;
+    }
     .course-item-del {
       opacity: 0;
       background: none;
@@ -1264,6 +1276,35 @@ function renderCourseList() {
     const name = document.createElement("span");
     name.className = "course-item-name";
     name.textContent = c.name;
+    name.title = "Doppelklick zum Umbenennen";
+    name.addEventListener("dblclick", (e) => {
+      e.stopPropagation();
+      const inp = document.createElement("input");
+      inp.className = "course-item-name-input";
+      inp.value = c.name;
+      name.replaceWith(inp);
+      inp.focus();
+      inp.select();
+      const save = () => {
+        const val = inp.value.trim();
+        if (val && val !== c.name) {
+          pushHistory();
+          state.courses[id].name = val;
+          saveState();
+          renderCourseList();
+          updateHeader();
+          toast('Kurs umbenannt zu "' + val + '".');
+        } else {
+          renderCourseList();
+        }
+      };
+      inp.addEventListener("blur", save);
+      inp.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter")  { inp.blur(); }
+        if (ev.key === "Escape") { inp.value = c.name; inp.blur(); }
+        ev.stopPropagation();
+      });
+    });
 
     const del = document.createElement("button");
     del.className = "course-item-del no-print";
