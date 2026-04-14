@@ -1131,17 +1131,9 @@ const NOTEN_OPT = [
 ];
 const STD_NOTE = "---";
 
-const DEFAULT_STUDENTS = [
-  "Ben Al.","Fabian Bae.","Ivan Ba.","Berfin Bu.",
-  "Hannah Bu.","Eymen Ch.","Jesko Ka.",
-  "Afroditi La.","Julian Li.","Arin Na.",
-  "Hila Or.","Iliana Pe.","Hendrik Pl.",
-  "Eliana Ro.","Marlon Se.","Yukta Si.",
-  "Luis Sn.","Mani So.","Rania Ug.","Axin Yi.",
-  "Lena We.","Moritz Br.","Sara Kl.","Tobias Ri.",
-  "Emre De.","Anna Sc.","Niklas Vo.","Leila Ha.",
-  "Finn Mu.","Clara Zi."
-];
+const DEFAULT_STUDENTS = Array.from({length: 30}, (_,i) =>
+  `Schüler ${String(i+1).padStart(2,"0")}`
+);
 
 const DEFAULT_GT = ["Halbjahr 1","Zwischennote","Halbjahr 2","Zeugnisnote"];
 
