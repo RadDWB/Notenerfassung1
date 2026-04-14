@@ -488,6 +488,91 @@
     .btn-undo:disabled { opacity: 0.35; cursor: not-allowed; }
     .btn-undo:disabled:hover { background: var(--surface); color: var(--text-2); border-color: var(--border); }
 
+    /* Info tooltip */
+    .info-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .info-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1px solid var(--border-strong);
+      background: var(--surface-raised);
+      color: var(--text-3);
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: default;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: border-color 0.12s, color 0.12s;
+      font-style: normal;
+      margin-left: -2px;
+      user-select: none;
+    }
+    .info-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+    .info-tooltip {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface-raised);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      width: 240px;
+      font-size: 0.74rem;
+      color: var(--text-2);
+      line-height: 1.6;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateX(-50%) translateY(4px);
+      transition: opacity 0.15s, transform 0.15s;
+      z-index: 100;
+      white-space: normal;
+    }
+    .info-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: var(--border-strong);
+    }
+    .info-tooltip strong {
+      display: block;
+      color: var(--text-1);
+      margin-bottom: 6px;
+      font-size: 0.75rem;
+    }
+    .info-tooltip code {
+      display: block;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      background: rgba(200,242,65,0.07);
+      border-radius: 4px;
+      padding: 6px 8px;
+      margin-top: 6px;
+      white-space: pre;
+    }
+    [data-theme="light"] .info-tooltip code {
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .info-wrap:hover .info-tooltip,
+    .info-icon:focus + .info-tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     /* =============================================
        INPUT
     ============================================= */
@@ -892,10 +977,23 @@
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
             Hinzufügen
           </button>
-          <button class="btn" onclick="triggerStudentImport()" title="Schülerliste aus Excel oder CSV importieren">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M8 5v6"/></svg>
-            Liste importieren
-          </button>
+          <div class="info-wrap">
+            <button class="btn" onclick="triggerStudentImport()">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 14V5M5 8l3-3 3 3M3 13h10"/></svg>
+              Liste importieren
+            </button>
+            <i class="info-icon" tabindex="0">?</i>
+            <div class="info-tooltip">
+              <strong>Erwartetes Format</strong>
+              Erste Spalte = Schülernamen, eine pro Zeile.
+              Header-Zeilen werden automatisch erkannt.
+              <code>Nachname, Vorname
+Müller, Anna
+Schmidt, Ben
+…</code>
+              Unterstützt: .xlsx · .xls · .csv
+            </div>
+          </div>
           <input type="file" id="studentImportInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleStudentImport(event)">
         </div>
         <div class="toolbar-right">
