@@ -1,808 +1,1697 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notenerfassung Pro</title>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gradus — Notenerfassung leicht gemacht</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    /* =============================================
+       DESIGN TOKENS — DARK PRECISION
+    ============================================= */
+    :root {
+      --bg:             #0E0F11;
+      --surface:        #161719;
+      --surface-raised: #1C1E21;
+      --surface-hover:  #202226;
+      --border:         rgba(255,255,255,0.07);
+      --border-strong:  rgba(255,255,255,0.12);
+      --accent:         #C8F241;
+      --accent-dim:     rgba(200,242,65,0.08);
+      --accent-glow:    rgba(200,242,65,0.18);
+      --text-1:         #F2F0EB;
+      --text-2:         #A8AAB0;
+      --text-3:         #6B6D72;
+      --danger:         #FF5F5F;
+      --danger-dim:     rgba(255,95,95,0.1);
+      --sidebar-w:      256px;
+      --header-h:       54px;
+      --radius:         8px;
+      --radius-lg:      12px;
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: #eef1f5;
-            padding: 12px;
-            color: #2c3e50;
-        }
+    /* =============================================
+       RESET
+    ============================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
 
-        .app { max-width: 720px; margin: auto; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      line-height: 1.6;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
 
-        .card {
-            background: white;
-            padding: 14px 16px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-bottom: 10px;
-        }
+    /* =============================================
+       CRYSTAL NETWORK CANVAS
+    ============================================= */
+    #crystalCanvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-        .app-header { display: flex; justify-content: space-between; align-items: center; }
-        .app-title  { font-size: 1.25rem; font-weight: 700; }
-        .app-sub    { font-size: 0.78rem; color: #888; margin-top: 2px; }
+    /* =============================================
+       LAYOUT
+    ============================================= */
+    .layout {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      height: 100vh;
+    }
 
-        .toolbar-row {
-            display: flex; gap: 8px; align-items: center;
-            flex-wrap: wrap; margin-bottom: 8px;
-        }
-        .toolbar-row:last-child { margin-bottom: 0; }
+    /* =============================================
+       SIDEBAR
+    ============================================= */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      height: 100vh;
+      background: rgba(22,23,25,0.92);
+      backdrop-filter: blur(12px);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
 
-        .section-label {
-            font-size: 0.7rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.5px;
-            color: #aaa; margin-bottom: 6px;
-        }
+    .sidebar-brand {
+      padding: 16px 18px 14px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .brand-logo {
+      display: block;
+      height: 44px;
+      width: auto;
+      filter: brightness(0) invert(1);
+      opacity: 0.92;
+    }
+    .brand-fallback { display: none; }
+    .brand-name {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      color: var(--text-1);
+      line-height: 1;
+    }
+    .brand-name span { color: var(--accent); }
+    .brand-sub {
+      font-size: 0.65rem;
+      color: var(--text-3);
+      margin-top: 5px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
 
-        .divider { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+    /* =============================================
+       LIGHT MODE TOKENS
+    ============================================= */
+    [data-theme="light"] {
+      --bg:             #F2EFE9;
+      --surface:        #FFFFFF;
+      --surface-raised: #F7F4F0;
+      --surface-hover:  #EEEAE4;
+      --border:         rgba(0,0,0,0.09);
+      --border-strong:  rgba(0,0,0,0.16);
+      --accent:         #2D4570;
+      --accent-dim:     rgba(45,69,112,0.08);
+      --accent-glow:    rgba(45,69,112,0.14);
+      --text-1:         #18181A;
+      --text-2:         #55524C;
+      --text-3:         #9A9690;
+      --danger:         #C83030;
+      --danger-dim:     rgba(200,48,48,0.08);
+    }
+    [data-theme="light"] .brand-logo { filter: none; opacity: 1; }
+    [data-theme="light"] .btn-accent { color: #ffffff; }
+    [data-theme="light"] .btn-accent:hover { background: #3a5a8f; border-color: #3a5a8f; color: #ffffff; }
+    [data-theme="light"] .gt-tab.active { color: #ffffff; }
+    [data-theme="light"] .course-item.active { color: var(--accent); }
+    [data-theme="light"] .btn-new-gt { color: var(--accent); border-color: rgba(45,69,112,0.25); }
+    [data-theme="light"] .btn-new-gt:hover { background: var(--accent-dim); border-color: rgba(45,69,112,0.4); }
+    [data-theme="light"] .btn-new-course { color: var(--accent); border-color: rgba(45,69,112,0.25); }
+    [data-theme="light"] .btn-new-course:hover { background: var(--accent-dim); border-color: rgba(45,69,112,0.4); }
+    [data-theme="light"] .storage-badge-dot { background: var(--accent); box-shadow: 0 0 5px rgba(45,69,112,0.4); }
+    [data-theme="light"] td.td-selbst { background: rgba(96,165,250,0.07); }
+    [data-theme="light"] td.td-lehrer { background: rgba(245,166,35,0.07); }
+    [data-theme="light"] .table-wrap {
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+    }
+    [data-theme="light"] .modal {
+      box-shadow: 0 24px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
+    }
+    [data-theme="light"] .sidebar {
+      background: rgba(255,255,255,0.92);
+    }
+    [data-theme="light"] .main {
+      background: rgba(242,239,233,0.6);
+    }
 
-        select.ctrl, input.ctrl {
-            padding: 6px 8px; border-radius: 5px;
-            border: 1px solid #ccc; font-size: 0.85rem;
-            background: white; flex: 1; min-width: 140px; color: #2c3e50;
-        }
-        select.ctrl:focus, input.ctrl:focus {
-            outline: 2px solid #3498db; border-color: transparent;
-        }
+    /* Theme toggle */
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text-3);
+      cursor: pointer;
+      transition: all 0.12s;
+      flex-shrink: 0;
+    }
+    .theme-toggle:hover { background: var(--surface-hover); color: var(--text-1); }
+    .theme-toggle svg { width: 15px; height: 15px; }
+    .icon-moon { display: block; }
+    .icon-sun  { display: none; }
+    [data-theme="light"] .icon-moon { display: none; }
+    [data-theme="light"] .icon-sun  { display: block; }
 
-        .btn {
-            padding: 6px 12px; border: none; border-radius: 5px;
-            cursor: pointer; font-size: 0.82rem; font-weight: 600;
-            transition: filter .15s, transform .1s; white-space: nowrap;
-        }
-        .btn:hover  { filter: brightness(.88); }
-        .btn:active { transform: scale(.97); }
-        .btn-blue   { background: #3498db; color: #fff; }
-        .btn-green  { background: #27ae60; color: #fff; }
-        .btn-orange { background: #e67e22; color: #fff; }
-        .btn-red    { background: #e74c3c; color: #fff; }
-        .btn-gray   { background: #95a5a6; color: #fff; }
-        .btn-teal   { background: #16a085; color: #fff; }
-        .btn-purple { background: #8e44ad; color: #fff; }
-        .btn-dark   { background: #2c3e50; color: #fff; }
+    /* localStorage badge */
+    .storage-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      margin: 0 10px 8px;
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      font-size: 0.68rem;
+      color: var(--text-3);
+      flex-shrink: 0;
+    }
+    .storage-badge svg { width: 11px; height: 11px; opacity: 0.6; flex-shrink: 0; }
+    .storage-badge-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      box-shadow: 0 0 5px var(--accent);
+    }
 
-        /* Tabelle */
-        .tbl-header { display: flex; justify-content: space-between; font-size: .82rem; color: #777; margin-bottom: 8px; }
-        .tbl-title  { text-align: center; font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
+    .sidebar-section-label {
+      font-size: 0.63rem;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      padding: 14px 18px 6px;
+      flex-shrink: 0;
+    }
 
-        table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-        th, td { padding: 6px 8px; border: 1px solid #ddd; }
-        th { background: #f5f5f5; font-weight: 600; text-align: center; font-size: .78rem; }
-        th.h-name { text-align: left; }
+    .course-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 10px;
+    }
+    .course-list::-webkit-scrollbar { width: 3px; }
+    .course-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
 
-        td.col-name   { font-weight: 500; vertical-align: middle; }
-        td.col-selbst { background: #e8f4fd; width: 95px; text-align: center; vertical-align: middle; }
-        td.col-lehrer { background: #fefce8; width: 95px; text-align: center; vertical-align: middle; }
-        td.col-del    { width: 30px; text-align: center; vertical-align: middle; }
+    .course-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: var(--text-2);
+      transition: background 0.12s, color 0.12s;
+      gap: 8px;
+      border: 1px solid transparent;
+      margin-bottom: 2px;
+    }
+    .course-item:hover { background: var(--surface-hover); color: var(--text-1); }
+    .course-item.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border-color: rgba(200,242,65,0.14);
+    }
+    .course-item-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-3);
+      flex-shrink: 0;
+      transition: background 0.12s;
+    }
+    .course-item.active .course-item-dot { background: var(--accent); }
+    .course-item-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .course-item-del {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--text-3);
+      cursor: pointer;
+      font-size: 0.72rem;
+      padding: 2px 5px;
+      border-radius: 4px;
+      transition: opacity 0.12s, color 0.12s, background 0.12s;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .course-item:hover .course-item-del { opacity: 1; }
+    .course-item-del:hover { color: var(--danger); background: var(--danger-dim); }
 
-        select.note-sel {
-            padding: 3px 4px; border-radius: 4px;
-            border: 1px solid #aaa; font-size: .85rem;
-            width: 100%; cursor: pointer; background: white;
-        }
+    .btn-new-course {
+      width: calc(100% - 20px);
+      margin: 6px 10px 10px;
+      padding: 8px 10px;
+      background: transparent;
+      border: 1px dashed rgba(200,242,65,0.2);
+      border-radius: var(--radius);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+      font-family: inherit;
+      flex-shrink: 0;
+    }
+    .btn-new-course:hover {
+      background: var(--accent-dim);
+      border-color: rgba(200,242,65,0.35);
+    }
 
-        .btn-row-del {
-            background: none; border: none;
-            color: #ccc; cursor: pointer; font-size: 1rem;
-            padding: 2px 5px; border-radius: 3px; transition: color .15s;
-        }
-        .btn-row-del:hover { color: #e74c3c; }
+    .sidebar-actions {
+      padding: 10px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .sidebar-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 10px;
+      background: none;
+      border: none;
+      border-radius: var(--radius);
+      color: var(--text-2);
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.12s, color 0.12s;
+      width: 100%;
+      text-align: left;
+    }
+    .sidebar-action-btn:hover { background: var(--surface-hover); color: var(--text-1); }
+    .sidebar-action-btn svg { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.7; }
 
-        /* Statistikleiste */
-        .stat-bar { display: flex; gap: 10px; flex-wrap: wrap; font-size: .78rem; color: #666; margin-top: 10px; align-items: center; }
-        .stat-dot  { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 3px; }
+    /* =============================================
+       MAIN
+    ============================================= */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+      background: rgba(14,15,17,0.6);
+      backdrop-filter: blur(8px);
+    }
 
-        /* Toast */
-        .toast {
-            position: fixed; bottom: 20px; right: 20px;
-            background: #2c3e50; color: #fff;
-            padding: 10px 18px; border-radius: 8px;
-            font-size: .88rem; opacity: 0;
-            transform: translateY(8px);
-            transition: opacity .25s, transform .25s;
-            z-index: 9999; max-width: 320px;
-        }
-        .toast.show { opacity: 1; transform: translateY(0); }
+    /* =============================================
+       HEADER
+    ============================================= */
+    .header {
+      height: var(--header-h);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .header-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.83rem;
+    }
+    .header-course { font-weight: 600; color: var(--text-1); }
+    .header-sep { color: var(--text-3); }
+    .header-gt { color: var(--text-3); font-weight: 400; }
+    .header-date {
+      margin-left: auto;
+      font-size: 0.73rem;
+      color: var(--text-3);
+      font-variant-numeric: tabular-nums;
+    }
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,.45);
-            display: none; align-items: center;
-            justify-content: center; z-index: 1000; padding: 16px;
-        }
-        .modal-overlay.show { display: flex; }
-        .modal {
-            background: #fff; padding: 22px;
-            border-radius: 10px; width: 100%; max-width: 390px;
-            box-shadow: 0 8px 30px rgba(0,0,0,.2);
-        }
-        .modal h3   { margin-bottom: 14px; font-size: 1.05rem; }
-        .modal label {
-            display: block; font-size: .8rem; font-weight: 600;
-            margin-bottom: 4px; margin-top: 12px; color: #555;
-        }
-        .modal label:first-of-type { margin-top: 0; }
-        .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+    /* =============================================
+       CONTENT
+    ============================================= */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 22px 24px;
+    }
+    .content::-webkit-scrollbar { width: 4px; }
+    .content::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
 
-        /* Druck */
-        @media print {
-            @page { size: portrait; margin: 1.5cm; }
-            body   { background: #fff; padding: 0; }
-            .no-print { display: none !important; }
-            .app   { max-width: none; }
-            .card  { box-shadow: none; padding: 4px 0; margin-bottom: 6px; }
-            select.note-sel {
-                border: none; appearance: none;
-                -webkit-appearance: none; background: transparent;
-                font-weight: 700; text-align: center;
-            }
-            td.col-selbst { background: #eff7ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            td.col-lehrer { background: #fffff0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        }
-    </style>
+    /* =============================================
+       GRADE TYPE TAB BAR
+    ============================================= */
+    .gt-bar {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .gt-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 13px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text-2);
+      font-size: 0.76rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+    .gt-tab:hover { background: var(--surface-hover); color: var(--text-1); border-color: var(--border-strong); }
+    .gt-tab.active {
+      background: var(--accent);
+      color: #0E0F11;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    .gt-tab-del {
+      opacity: 0;
+      font-size: 0.68rem;
+      line-height: 1;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: inherit;
+      padding: 0;
+      font-family: inherit;
+      transition: opacity 0.12s;
+    }
+    .gt-tab:hover .gt-tab-del { opacity: 0.6; }
+    .gt-tab.active .gt-tab-del { opacity: 0.5; }
+    .gt-tab .gt-tab-del:hover { opacity: 1; }
+
+    .btn-new-gt {
+      padding: 5px 13px;
+      border-radius: 999px;
+      border: 1px dashed rgba(200,242,65,0.22);
+      background: none;
+      color: var(--accent);
+      font-size: 0.74rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.12s;
+    }
+    .btn-new-gt:hover { background: var(--accent-dim); border-color: rgba(200,242,65,0.4); }
+
+    /* =============================================
+       TOOLBAR
+    ============================================= */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .toolbar-left { display: flex; gap: 8px; align-items: center; flex: 1; min-width: 0; flex-wrap: wrap; }
+    .toolbar-right { display: flex; gap: 8px; align-items: center; }
+
+    /* =============================================
+       BUTTONS
+    ============================================= */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 13px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-2);
+      font-size: 0.77rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--surface-hover); color: var(--text-1); border-color: var(--border-strong); }
+    .btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #0E0F11;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    .btn-accent:hover { background: #d3f745; border-color: #d3f745; color: #0E0F11; }
+
+    .btn-danger { color: var(--danger); border-color: rgba(255,95,95,0.18); }
+    .btn-danger:hover { background: var(--danger-dim); border-color: var(--danger); color: var(--danger); }
+
+    .btn-undo { color: var(--text-2); }
+    .btn-undo:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-undo:disabled:hover { background: var(--surface); color: var(--text-2); border-color: var(--border); }
+
+    /* =============================================
+       INPUT
+    ============================================= */
+    .input-field {
+      padding: 7px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-1);
+      font-size: 0.83rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.12s, box-shadow 0.12s;
+    }
+    .input-field::placeholder { color: var(--text-3); }
+    .input-field:focus {
+      border-color: rgba(200,242,65,0.5);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    select.input-field { cursor: pointer; }
+    select.input-field option { background: #1C1E21; color: var(--text-1); }
+
+    /* =============================================
+       TABLE
+    ============================================= */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow:
+        0 1px 2px rgba(0,0,0,0.2),
+        0 4px 16px rgba(0,0,0,0.15),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .table-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .table-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-1);
+    }
+    .table-meta { font-size: 0.73rem; color: var(--text-3); }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead th {
+      padding: 9px 16px;
+      text-align: left;
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+    }
+    thead th.th-center { text-align: center; }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.08s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+    td {
+      padding: 9px 16px;
+      vertical-align: middle;
+    }
+    td.td-name {
+      font-size: 0.84rem;
+      font-weight: 500;
+      color: var(--text-1);
+    }
+    td.td-grade { text-align: center; width: 110px; }
+    td.td-del { text-align: center; width: 44px; }
+    td.td-selbst { background: rgba(96,165,250,0.04); }
+    td.td-lehrer { background: rgba(245,166,35,0.04); }
+
+    .note-sel {
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface-raised);
+      color: var(--text-1);
+      font-size: 0.82rem;
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+      width: 68px;
+      text-align: center;
+      transition: border-color 0.12s, color 0.12s;
+    }
+    .note-sel:focus { border-color: rgba(200,242,65,0.4); }
+    .note-sel option { background: #1C1E21; }
+
+    .btn-row-del {
+      background: none;
+      border: none;
+      color: var(--text-3);
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 5px;
+      transition: color 0.12s, background 0.12s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-row-del:hover { color: var(--danger); background: var(--danger-dim); }
+    .btn-row-del svg { width: 12px; height: 12px; }
+
+    /* =============================================
+       STAT BAR
+    ============================================= */
+    .stat-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 11px 20px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+      background: rgba(255,255,255,0.01);
+    }
+    .stat-label {
+      font-size: 0.63rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.76rem;
+      color: var(--text-2);
+    }
+    .stat-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .stat-count { font-weight: 600; color: var(--text-1); }
+    .stat-empty { font-size: 0.76rem; color: var(--text-3); font-style: italic; }
+
+    /* =============================================
+       MODAL
+    ============================================= */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .modal-overlay.show { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow:
+        0 32px 80px rgba(0,0,0,0.6),
+        0 0 0 1px rgba(255,255,255,0.04),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      animation: modal-in 0.22s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(0.96) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.2rem;
+      letter-spacing: -0.01em;
+      color: var(--text-1);
+      margin-bottom: 20px;
+      line-height: 1.2;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 6px;
+      margin-top: 14px;
+    }
+    .form-label:first-of-type { margin-top: 0; }
+    .modal .input-field { width: 100%; }
+
+    .modal-btns {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 22px;
+    }
+
+    /* =============================================
+       TOAST
+    ============================================= */
+    .toast {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border-strong);
+      border-left: 2px solid var(--accent);
+      color: var(--text-1);
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      font-size: 0.81rem;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.22s, transform 0.22s;
+      z-index: 9999;
+      max-width: 300px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* =============================================
+       EMPTY STATE
+    ============================================= */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px;
+      text-align: center;
+      gap: 10px;
+      color: var(--text-3);
+    }
+    .empty-state-icon { font-size: 2rem; opacity: 0.25; margin-bottom: 4px; }
+    .empty-state-title { font-size: 0.9rem; font-weight: 600; color: var(--text-2); }
+    .empty-state-sub { font-size: 0.78rem; }
+
+    /* =============================================
+       PRINT
+    ============================================= */
+    @media print {
+      #crystalCanvas, .sidebar, .toolbar, .btn-new-gt,
+      .gt-tab-del, .course-item-del, .btn-row-del,
+      .sidebar-actions, .stat-bar { display: none !important; }
+      body { background: white; color: black; overflow: auto; }
+      .layout { display: block; }
+      .main { display: block; }
+      .header { border-bottom: 1px solid #ddd; }
+      .content { overflow: visible; padding: 16px; }
+      .table-wrap { border: 1px solid #ddd; box-shadow: none; }
+      .table-header-row { border-bottom: 1px solid #ddd; }
+      table { font-size: 0.85rem; }
+      thead th { background: #f5f5f5; color: #333; border-bottom: 1px solid #ddd; }
+      tbody tr { border-bottom: 1px solid #eee; }
+      td.td-name { color: #111; }
+      .note-sel {
+        border: none;
+        -webkit-appearance: none;
+        background: transparent;
+        font-weight: 700;
+        text-align: center;
+        color: inherit;
+      }
+      td.td-selbst { background: #eff7ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      td.td-lehrer { background: #fffff0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
 </head>
 <body>
-<div class="app">
 
-    <!-- BANNER -->
-    <div class="card no-print" style="padding:0;overflow:hidden;">
-        <img src="banner.jpg"
-             alt="Sportnoten erfassen"
-             style="width:100%;display:block;border-radius:10px;"
-             onerror="this.style.display='none';document.getElementById('fallbackHeader').style.display='flex'">
-        <!-- Fallback wenn kein Bild vorhanden -->
-        <div id="fallbackHeader" class="app-header" style="display:none;padding:14px 16px;">
-            <div>
-                <div class="app-title">Notenerfassung Pro</div>
-                <div class="app-sub">Kursverwaltung &middot; Notenarten &middot; Export</div>
-            </div>
-            <div style="font-size:.82rem;color:#888;" id="headerDate"></div>
-        </div>
+<!-- Crystal Network Canvas -->
+<canvas id="crystalCanvas"></canvas>
+
+<div class="layout">
+
+  <!-- ==================== SIDEBAR ==================== -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="Gradus.png" alt="Gradus" class="brand-logo"
+           onerror="this.style.display='none';document.querySelector('.brand-fallback').style.display='block'">
+      <div class="brand-fallback">
+        <div class="brand-name">Grad<span>us</span></div>
+        <div class="brand-sub">Notenerfassung leicht gemacht</div>
+      </div>
     </div>
 
-    <!-- HEADER (Datum, nur sichtbar wenn Banner geladen) -->
-    <div class="card no-print" id="dateCard" style="padding:6px 16px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:.82rem;font-weight:700;color:#2c3e50;">Notenerfassung Pro</div>
-        <div style="font-size:.82rem;color:#888;" id="headerDate"></div>
+    <div class="sidebar-section-label">Kurse</div>
+    <div class="course-list" id="courseList"></div>
+    <button class="btn-new-course no-print" onclick="showModal('newCourseModal')">+ Neuer Kurs</button>
+
+    <div class="storage-badge no-print">
+      <span class="storage-badge-dot"></span>
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
+      Lokal gespeichert · nur auf diesem Gerät
     </div>
 
-    <!-- KURS & NOTENART -->
-    <div class="card no-print">
-        <div class="section-label">Kurs</div>
-        <div class="toolbar-row">
-            <select class="ctrl" id="courseSelect" onchange="onCourseChange()"></select>
-            <button class="btn btn-blue" onclick="showModal('newCourseModal')">+ Neuer Kurs</button>
-            <button class="btn btn-red"  onclick="deleteCourse()">Loeschen</button>
-        </div>
-        <hr class="divider">
-        <div class="section-label">Notenart</div>
-        <div class="toolbar-row">
-            <select class="ctrl" id="gradeTypeSelect" onchange="onGradeTypeChange()"></select>
-            <button class="btn btn-teal" onclick="showModal('newGradeTypeModal')">+ Neue Notenart</button>
-            <button class="btn btn-red"  onclick="deleteGradeType()">Loeschen</button>
-        </div>
+    <div class="sidebar-actions no-print">
+      <button class="sidebar-action-btn" onclick="exportExcel()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="12" height="12" rx="2"/>
+          <path d="M5 6.5l2.5 3 2.5-3M5 11h6"/>
+        </svg>
+        Excel exportieren
+      </button>
+      <button class="sidebar-action-btn" onclick="window.print()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 6V3h8v3M4 12H3a1 1 0 01-1-1V7a1 1 0 011-1h10a1 1 0 011 1v4a1 1 0 01-1 1h-1"/>
+          <rect x="4" y="9" width="8" height="4" rx="1"/>
+        </svg>
+        PDF / Drucken
+      </button>
+      <button class="sidebar-action-btn" onclick="exportBackup()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 2v9M5 8l3 3 3-3M3 13h10"/>
+        </svg>
+        Backup speichern
+      </button>
+      <button class="sidebar-action-btn" onclick="triggerImport()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 14V5M5 8l3-3 3 3M3 3h10"/>
+        </svg>
+        Backup laden
+      </button>
+      <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(event)">
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN ==================== -->
+  <main class="main">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-breadcrumb">
+        <span class="header-course" id="headerCourseName">—</span>
+        <span class="header-sep">/</span>
+        <span class="header-gt" id="headerGtName">—</span>
+      </div>
+      <span class="header-date" id="headerDate"></span>
+      <button class="theme-toggle no-print" onclick="toggleTheme()" title="Hell/Dunkel wechseln">
+        <svg class="icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M13 9.5A5.5 5.5 0 016.5 3a5.5 5.5 0 100 10A5.5 5.5 0 0013 9.5z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.22 3.22l1.42 1.42M11.36 11.36l1.42 1.42M3.22 12.78l1.42-1.42M11.36 4.64l1.42-1.42"/></svg>
+      </button>
     </div>
 
-    <!-- AKTIONEN -->
-    <div class="card no-print">
-        <div class="section-label">Aktionen</div>
-        <div class="toolbar-row">
-            <button class="btn btn-green"  onclick="exportExcel()">&#128202; Excel Export</button>
-            <button class="btn btn-orange" onclick="window.print()">&#128438; PDF / Drucken</button>
-            <button class="btn btn-gray"   onclick="resetCurrentGrades()">&#8635; Noten zuruecksetzen</button>
-            <button class="btn btn-purple" onclick="exportBackup()">&#128190; Backup speichern</button>
-            <button class="btn btn-dark"   onclick="triggerImport()">&#128194; Backup laden</button>
-        </div>
-        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(event)">
-        <hr class="divider">
-        <div class="section-label">Schueler hinzufuegen</div>
-        <div class="toolbar-row">
-            <input type="text" class="ctrl" id="newStudentInput"
-                   placeholder="Name eingeben ..."
-                   onkeydown="if(event.key==='Enter') addStudent()">
-            <button class="btn btn-blue" onclick="addStudent()">+ Hinzufuegen</button>
-        </div>
-    </div>
+    <!-- Content -->
+    <div class="content">
 
-    <!-- NOTENTABELLE -->
-    <div class="card" id="tableCard">
-        <div class="tbl-header">
-            <span>Kurs: <strong id="printKurs">&mdash;</strong></span>
-            <span id="printDate"></span>
+      <!-- Grade type tabs -->
+      <div class="gt-bar no-print" id="gradeTypeBar"></div>
+
+      <!-- Toolbar -->
+      <div class="toolbar no-print">
+        <div class="toolbar-left">
+          <input type="text" class="input-field" id="newStudentInput"
+                 placeholder="Schüler hinzufügen …"
+                 style="max-width:240px;"
+                 onkeydown="if(event.key==='Enter') addStudent()">
+          <button class="btn btn-accent" onclick="addStudent()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+            Hinzufügen
+          </button>
         </div>
-        <div class="tbl-title" id="tableTitle">Notenabgleich</div>
+        <div class="toolbar-right">
+          <button class="btn btn-undo" id="undoBtn" onclick="undo()" disabled title="Letzte Aktion rückgängig (Strg+Z)">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7H10a3 3 0 010 6H7M3 7l3-3M3 7l3 3"/></svg>
+            Rückgängig
+          </button>
+          <button class="btn btn-danger" onclick="resetCurrentGrades()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8a4.5 4.5 0 109-1M3.5 8V5m0 3h3"/></svg>
+            Noten zurücksetzen
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <div class="table-header-row">
+          <div class="table-title" id="tableTitle">Notenabgleich</div>
+          <div class="table-meta">
+            <span id="printKurs">—</span> &middot; <span id="printDate"></span>
+          </div>
+        </div>
         <table>
-            <thead>
-                <tr>
-                    <th class="h-name">Schueler</th>
-                    <th class="col-selbst">Selbst</th>
-                    <th class="col-lehrer">Lehrer</th>
-                    <th class="col-del no-print"></th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
+          <thead>
+            <tr>
+              <th>Schüler</th>
+              <th class="th-center" style="background:rgba(96,165,250,0.05);">Selbst</th>
+              <th class="th-center" style="background:rgba(245,166,35,0.05);">Lehrer</th>
+              <th class="no-print" style="width:44px;"></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
         </table>
         <div class="stat-bar no-print" id="statBar"></div>
-    </div>
+      </div>
 
-</div><!-- /.app -->
+    </div><!-- /content -->
+  </main>
+</div><!-- /layout -->
 
 
-<!-- MODAL: Neuer Kurs -->
+<!-- ==================== MODALS ==================== -->
+
+<!-- Modal: Neuer Kurs -->
 <div class="modal-overlay" id="newCourseModal">
-    <div class="modal">
-        <h3>Neuen Kurs anlegen</h3>
-        <label>Kursname</label>
-        <input type="text" class="ctrl" id="newCourseName"
-               placeholder="z.B. Klasse 10a - Mathematik" style="width:100%"
-               onkeydown="if(event.key==='Enter') createCourse()">
-        <label>Startschueler</label>
-        <select class="ctrl" id="newCourseStudents" style="width:100%">
-            <option value="default">Standardliste (Beispielklasse)</option>
-            <option value="empty">Leer beginnen</option>
-            <option value="copy">Aus aktuellem Kurs kopieren</option>
-        </select>
-        <div class="modal-btns">
-            <button class="btn btn-gray" onclick="closeModal('newCourseModal')">Abbrechen</button>
-            <button class="btn btn-blue" onclick="createCourse()">Anlegen</button>
-        </div>
+  <div class="modal">
+    <div class="modal-title">Neuen Kurs anlegen</div>
+    <label class="form-label">Kursname</label>
+    <input type="text" class="input-field" id="newCourseName"
+           placeholder="z.B. 10a · Mathematik"
+           onkeydown="if(event.key==='Enter') createCourse()">
+    <label class="form-label">Startschüler</label>
+    <select class="input-field" id="newCourseStudents">
+      <option value="default">Standardliste (Beispielklasse)</option>
+      <option value="empty">Leer beginnen</option>
+      <option value="copy">Aus aktuellem Kurs kopieren</option>
+    </select>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal('newCourseModal')">Abbrechen</button>
+      <button class="btn btn-accent" onclick="createCourse()">Kurs anlegen</button>
     </div>
+  </div>
 </div>
 
-<!-- MODAL: Neue Notenart -->
+<!-- Modal: Neue Notenart -->
 <div class="modal-overlay" id="newGradeTypeModal">
-    <div class="modal">
-        <h3>Neue Notenart anlegen</h3>
-        <label>Vordefinierte Kategorie</label>
-        <select class="ctrl" id="gradeTypeCat" style="width:100%" onchange="onCatChange()">
-            <option value="">-- Bitte waehlen oder selbst eingeben --</option>
-            <option value="Halbjahr 1">Halbjahr 1</option>
-            <option value="Halbjahr 2">Halbjahr 2</option>
-            <option value="Zwischennote">Zwischennote</option>
-            <option value="Muendliche Pruefung">Muendliche Pruefung</option>
-            <option value="Praktische Ueberpruefung">Praktische Ueberpruefung</option>
-            <option value="Schriftliche Pruefung">Schriftliche Pruefung</option>
-            <option value="Zeugnisnote">Zeugnisnote</option>
-            <option value="Halbjahreszeugnis">Halbjahreszeugnis</option>
-            <option value="Jahreszeugnis">Jahreszeugnis</option>
-            <option value="Abschlusszeugnis">Abschlusszeugnis</option>
-            <option value="Verhalten">Verhalten</option>
-            <option value="Mitarbeit">Mitarbeit</option>
-            <option value="Sonstige">Sonstige</option>
-        </select>
-        <label>Eigene Bezeichnung</label>
-        <input type="text" class="ctrl" id="gradeTypeName"
-               placeholder="Bezeichnung eingeben ..." style="width:100%"
-               onkeydown="if(event.key==='Enter') createGradeType()">
-        <div class="modal-btns">
-            <button class="btn btn-gray" onclick="closeModal('newGradeTypeModal')">Abbrechen</button>
-            <button class="btn btn-teal" onclick="createGradeType()">Anlegen</button>
-        </div>
+  <div class="modal">
+    <div class="modal-title">Neue Notenart</div>
+    <label class="form-label">Vorlage wählen</label>
+    <select class="input-field" id="gradeTypeCat" onchange="onCatChange()">
+      <option value="">— Vorlage wählen oder selbst eingeben —</option>
+      <option value="Halbjahr 1">Halbjahr 1</option>
+      <option value="Halbjahr 2">Halbjahr 2</option>
+      <option value="Zwischennote">Zwischennote</option>
+      <option value="Mündliche Prüfung">Mündliche Prüfung</option>
+      <option value="Praktische Überprüfung">Praktische Überprüfung</option>
+      <option value="Schriftliche Prüfung">Schriftliche Prüfung</option>
+      <option value="Zeugnisnote">Zeugnisnote</option>
+      <option value="Halbjahreszeugnis">Halbjahreszeugnis</option>
+      <option value="Jahreszeugnis">Jahreszeugnis</option>
+      <option value="Abschlusszeugnis">Abschlusszeugnis</option>
+      <option value="Verhalten">Verhalten</option>
+      <option value="Mitarbeit">Mitarbeit</option>
+      <option value="Sonstige">Sonstige</option>
+    </select>
+    <label class="form-label">Eigene Bezeichnung</label>
+    <input type="text" class="input-field" id="gradeTypeName"
+           placeholder="Bezeichnung eingeben …"
+           onkeydown="if(event.key==='Enter') createGradeType()">
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal('newGradeTypeModal')">Abbrechen</button>
+      <button class="btn btn-accent" onclick="createGradeType()">Anlegen</button>
     </div>
+  </div>
 </div>
 
-<!-- TOAST -->
+<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 
+<!-- ==================== SCRIPTS ==================== -->
 <script>
-// =========================================================
+// =====================================================
 // KONSTANTEN
-// =========================================================
+// =====================================================
 const STORAGE_KEY = "notenerfassung_pro_v2";
 
 const NOTEN_OPT = [
-    "---", "1+", "1", "1-",
-    "2+", "2", "2-",
-    "3+", "3", "3-",
-    "4+", "4", "4-",
-    "5", "6"
+  "---","1+","1","1-",
+  "2+","2","2-",
+  "3+","3","3-",
+  "4+","4","4-",
+  "5","6"
 ];
 const STD_NOTE = "---";
 
 const DEFAULT_STUDENTS = [
-    "Ben Al.", "Fabian Bae.", "Ivan Ba.", "Berfin Bu.",
-    "Hannah Bu.", "Eymen Ch.", "Jesko Ka.",
-    "Afroditi La.", "Julian Li.", "Arin Na.",
-    "Hila Or.", "Iliana Pe.", "Hendrik Pl.",
-    "Eliana Ro.", "Marlon Se.", "Yukta Si.",
-    "Luis Sn.", "Mani So.", "Rania Ug.", "Axin Yi.",
-    "Lena We.", "Moritz Br.", "Sara Kl.", "Tobias Ri.",
-    "Emre De.", "Anna Sc.", "Niklas Vo.", "Leila Ha.",
-    "Finn Mu.", "Clara Zi."
+  "Ben Al.","Fabian Bae.","Ivan Ba.","Berfin Bu.",
+  "Hannah Bu.","Eymen Ch.","Jesko Ka.",
+  "Afroditi La.","Julian Li.","Arin Na.",
+  "Hila Or.","Iliana Pe.","Hendrik Pl.",
+  "Eliana Ro.","Marlon Se.","Yukta Si.",
+  "Luis Sn.","Mani So.","Rania Ug.","Axin Yi.",
+  "Lena We.","Moritz Br.","Sara Kl.","Tobias Ri.",
+  "Emre De.","Anna Sc.","Niklas Vo.","Leila Ha.",
+  "Finn Mu.","Clara Zi."
 ];
 
-const DEFAULT_GT = [
-    "Halbjahr 1", "Zwischennote", "Halbjahr 2", "Zeugnisnote"
-];
+const DEFAULT_GT = ["Halbjahr 1","Zwischennote","Halbjahr 2","Zeugnisnote"];
 
 const NOTE_COLORS = {
-    "1+":"#1a7f37","1":"#27ae60","1-":"#52be80",
-    "2+":"#3498db","2":"#2980b9","2-":"#5dade2",
-    "3+":"#f39c12","3":"#e67e22","3-":"#f0a500",
-    "4+":"#e74c3c","4":"#c0392b","4-":"#ec7063",
-    "5":"#8e44ad","6":"#2c3e50"
+  "1+":"#4ADE80","1":"#22C55E","1-":"#86EFAC",
+  "2+":"#60A5FA","2":"#3B82F6","2-":"#93C5FD",
+  "3+":"#FCD34D","3":"#F59E0B","3-":"#FDE68A",
+  "4+":"#FB923C","4":"#F97316","4-":"#FDBA74",
+  "5":"#F87171","6":"#EF4444"
 };
 
-// =========================================================
+// =====================================================
+// UNDO STACK
+// =====================================================
+const MAX_HISTORY = 25;
+let _history = [];
+
+function pushHistory() {
+  _history.push(JSON.stringify(state));
+  if (_history.length > MAX_HISTORY) _history.shift();
+  updateUndoBtn();
+}
+
+function undo() {
+  if (!_history.length) return;
+  state = JSON.parse(_history.pop());
+  if (!state.courses[state.currentCourseId])
+    state.currentCourseId = Object.keys(state.courses)[0];
+  const c = currentCourse();
+  if (c && !c.gradeTypes.find(g => g.id === state.currentGradeTypeId))
+    state.currentGradeTypeId = c.gradeTypes[0]?.id || null;
+  saveState();
+  renderAll();
+  updateUndoBtn();
+  toast("Rückgängig gemacht.");
+}
+
+function updateUndoBtn() {
+  const btn = document.getElementById("undoBtn");
+  if (!btn) return;
+  btn.disabled = _history.length === 0;
+}
+
+// =====================================================
 // ZUSTAND
-// =========================================================
+// =====================================================
 let state = { courses: {}, currentCourseId: null, currentGradeTypeId: null };
 
-// =========================================================
+// =====================================================
 // PERSISTENZ
-// =========================================================
+// =====================================================
 function saveState() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-    catch(e) { toast("Speichern fehlgeschlagen: " + e.message); }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e) { toast("Speichern fehlgeschlagen: " + e.message); }
 }
 
 function loadState() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) state = JSON.parse(raw);
-    } catch(e) { console.warn("Laden fehlgeschlagen:", e); }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state = JSON.parse(raw);
+  } catch(e) { console.warn("Laden fehlgeschlagen:", e); }
 }
 
-// =========================================================
+// =====================================================
 // HILFSFUNKTIONEN
-// =========================================================
+// =====================================================
 function uid() {
-    return "_" + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+  return "_" + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
 }
-
 function currentCourse() { return state.courses[state.currentCourseId]; }
-
 function currentGradeType() {
-    const c = currentCourse();
-    return c ? c.gradeTypes.find(g => g.id === state.currentGradeTypeId) : null;
+  const c = currentCourse();
+  return c ? c.gradeTypes.find(g => g.id === state.currentGradeTypeId) : null;
 }
 
-// =========================================================
+// =====================================================
 // INIT
-// =========================================================
+// =====================================================
 function init() {
-    const now = new Date().toLocaleDateString("de-DE");
-    document.getElementById("headerDate").textContent = "Stand: " + now;
-    document.getElementById("printDate").textContent  = "Datum: " + now;
+  const now = new Date().toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"short",year:"numeric"});
+  document.getElementById("headerDate").textContent = now;
+  document.getElementById("printDate").textContent = new Date().toLocaleDateString("de-DE");
 
-    loadState();
+  loadState();
 
-    if (Object.keys(state.courses).length === 0) {
-        createDefaultCourse();
-    } else {
-        // Sanity-Check: IDs pruefen
-        if (!state.courses[state.currentCourseId]) {
-            state.currentCourseId = Object.keys(state.courses)[0];
-        }
-        const c = currentCourse();
-        if (!c.gradeTypes.find(g => g.id === state.currentGradeTypeId)) {
-            state.currentGradeTypeId = c.gradeTypes[0]?.id || null;
-        }
+  if (Object.keys(state.courses).length === 0) {
+    createDefaultCourse();
+  } else {
+    if (!state.courses[state.currentCourseId]) {
+      state.currentCourseId = Object.keys(state.courses)[0];
     }
+    const c = currentCourse();
+    if (!c.gradeTypes.find(g => g.id === state.currentGradeTypeId)) {
+      state.currentGradeTypeId = c.gradeTypes[0]?.id || null;
+    }
+  }
 
-    renderCourseSelect();
-    renderGradeTypeSelect();
-    renderTable();
+  renderAll();
 }
 
 function createDefaultCourse() {
-    const id = uid();
-    const gts = DEFAULT_GT.map(name => ({ id: uid(), name }));
-    state.courses[id] = {
-        name: "Mein Kurs",
-        students: [...DEFAULT_STUDENTS],
-        gradeTypes: gts,
-        grades: {}
-    };
-    state.currentCourseId = id;
-    state.currentGradeTypeId = gts[0].id;
-    saveState();
+  const id = uid();
+  const gts = DEFAULT_GT.map(name => ({ id: uid(), name }));
+  state.courses[id] = { name: "Mein Kurs", students: [...DEFAULT_STUDENTS], gradeTypes: gts, grades: {} };
+  state.currentCourseId = id;
+  state.currentGradeTypeId = gts[0].id;
+  saveState();
 }
 
-// =========================================================
+function renderAll() {
+  renderCourseList();
+  renderGradeTypeTabs();
+  renderTable();
+  updateHeader();
+}
+
+// =====================================================
+// HEADER
+// =====================================================
+function updateHeader() {
+  const c  = currentCourse();
+  const gt = currentGradeType();
+  document.getElementById("headerCourseName").textContent = c ? c.name : "—";
+  document.getElementById("headerGtName").textContent     = gt ? gt.name : "—";
+  document.getElementById("printKurs").textContent        = c ? c.name : "—";
+}
+
+// =====================================================
 // KURS-VERWALTUNG
-// =========================================================
-function renderCourseSelect() {
-    const sel = document.getElementById("courseSelect");
-    sel.innerHTML = "";
-    Object.entries(state.courses).forEach(([id, c]) => {
-        const o = document.createElement("option");
-        o.value = id; o.textContent = c.name;
-        if (id === state.currentCourseId) o.selected = true;
-        sel.appendChild(o);
-    });
+// =====================================================
+function renderCourseList() {
+  const list = document.getElementById("courseList");
+  list.innerHTML = "";
+  Object.entries(state.courses).forEach(([id, c]) => {
+    const item = document.createElement("div");
+    item.className = "course-item" + (id === state.currentCourseId ? " active" : "");
+
+    const dot  = document.createElement("span");
+    dot.className = "course-item-dot";
+
+    const name = document.createElement("span");
+    name.className = "course-item-name";
+    name.textContent = c.name;
+
+    const del = document.createElement("button");
+    del.className = "course-item-del no-print";
+    del.textContent = "✕";
+    del.title = "Kurs löschen";
+    del.addEventListener("click", (e) => { e.stopPropagation(); deleteCourseById(id); });
+
+    item.appendChild(dot);
+    item.appendChild(name);
+    item.appendChild(del);
+    item.addEventListener("click", () => selectCourse(id));
+    list.appendChild(item);
+  });
 }
 
-function onCourseChange() {
-    state.currentCourseId = document.getElementById("courseSelect").value;
-    const c = currentCourse();
-    state.currentGradeTypeId = c.gradeTypes[0]?.id || null;
-    saveState(); renderGradeTypeSelect(); renderTable();
+function selectCourse(id) {
+  state.currentCourseId = id;
+  const c = currentCourse();
+  state.currentGradeTypeId = c.gradeTypes[0]?.id || null;
+  saveState();
+  renderAll();
 }
 
 function createCourse() {
-    const name = document.getElementById("newCourseName").value.trim();
-    if (!name) { toast("Bitte einen Kursnamen eingeben!"); return; }
+  const name = document.getElementById("newCourseName").value.trim();
+  if (!name) { toast("Bitte einen Kursnamen eingeben!"); return; }
+  pushHistory();
 
-    const mode = document.getElementById("newCourseStudents").value;
-    let students = [];
-    if (mode === "default") students = [...DEFAULT_STUDENTS];
-    else if (mode === "copy" && state.currentCourseId) {
-        students = [...(currentCourse().students || [])];
-    }
+  const mode = document.getElementById("newCourseStudents").value;
+  let students = [];
+  if (mode === "default") students = [...DEFAULT_STUDENTS];
+  else if (mode === "copy" && state.currentCourseId) students = [...(currentCourse().students || [])];
 
-    const id = uid();
-    const gts = DEFAULT_GT.map(n => ({ id: uid(), name: n }));
-    state.courses[id] = { name, students, gradeTypes: gts, grades: {} };
-    state.currentCourseId = id;
-    state.currentGradeTypeId = gts[0].id;
+  const id  = uid();
+  const gts = DEFAULT_GT.map(n => ({ id: uid(), name: n }));
+  state.courses[id] = { name, students, gradeTypes: gts, grades: {} };
+  state.currentCourseId = id;
+  state.currentGradeTypeId = gts[0].id;
 
-    saveState(); renderCourseSelect(); renderGradeTypeSelect(); renderTable();
-    closeModal("newCourseModal");
-    toast('Kurs "' + name + '" angelegt.');
+  saveState();
+  closeModal("newCourseModal");
+  renderAll();
+  toast('Kurs "' + name + '" angelegt.');
 }
 
-function deleteCourse() {
-    const keys = Object.keys(state.courses);
-    if (keys.length <= 1) { toast("Mindestens ein Kurs muss vorhanden bleiben!"); return; }
-
-    const c = currentCourse();
-    if (!confirm('Kurs "' + c.name + '" wirklich loeschen? Alle Noten gehen verloren!')) return;
-
-    delete state.courses[state.currentCourseId];
+function deleteCourseById(id) {
+  const keys = Object.keys(state.courses);
+  if (keys.length <= 1) { toast("Mindestens ein Kurs muss vorhanden bleiben!"); return; }
+  const c = state.courses[id];
+  if (!confirm('Kurs "' + c.name + '" wirklich löschen? Alle Noten gehen verloren!')) return;
+  pushHistory();
+  delete state.courses[id];
+  if (state.currentCourseId === id) {
     state.currentCourseId = Object.keys(state.courses)[0];
     const nc = currentCourse();
     state.currentGradeTypeId = nc.gradeTypes[0]?.id || null;
-
-    saveState(); renderCourseSelect(); renderGradeTypeSelect(); renderTable();
-    toast("Kurs geloescht.");
+  }
+  saveState();
+  renderAll();
+  toast("Kurs gelöscht.");
 }
 
-// =========================================================
+// =====================================================
 // NOTENART-VERWALTUNG
-// =========================================================
-function renderGradeTypeSelect() {
-    const sel = document.getElementById("gradeTypeSelect");
-    sel.innerHTML = "";
-    const c = currentCourse();
-    if (!c || !c.gradeTypes.length) {
-        sel.innerHTML = '<option>-- Keine Notenart --</option>';
-        return;
-    }
-    c.gradeTypes.forEach(gt => {
-        const o = document.createElement("option");
-        o.value = gt.id; o.textContent = gt.name;
-        if (gt.id === state.currentGradeTypeId) o.selected = true;
-        sel.appendChild(o);
+// =====================================================
+function renderGradeTypeTabs() {
+  const bar = document.getElementById("gradeTypeBar");
+  bar.innerHTML = "";
+  const c = currentCourse();
+  if (!c) return;
+
+  c.gradeTypes.forEach(gt => {
+    const tab = document.createElement("button");
+    tab.className = "gt-tab" + (gt.id === state.currentGradeTypeId ? " active" : "");
+
+    const label = document.createElement("span");
+    label.textContent = gt.name;
+
+    const del = document.createElement("button");
+    del.className = "gt-tab-del";
+    del.textContent = "✕";
+    del.title = "Notenart löschen";
+    del.addEventListener("click", (e) => { e.stopPropagation(); deleteGradeTypeById(gt.id); });
+
+    tab.appendChild(label);
+    tab.appendChild(del);
+    tab.addEventListener("click", (e) => {
+      if (!e.target.matches('.gt-tab-del')) selectGradeType(gt.id);
     });
+    bar.appendChild(tab);
+  });
+
+  const addBtn = document.createElement("button");
+  addBtn.className = "btn-new-gt";
+  addBtn.textContent = "+ Notenart";
+  addBtn.onclick = () => showModal("newGradeTypeModal");
+  bar.appendChild(addBtn);
 }
 
-function onGradeTypeChange() {
-    state.currentGradeTypeId = document.getElementById("gradeTypeSelect").value;
-    saveState(); renderTable();
+function selectGradeType(id) {
+  state.currentGradeTypeId = id;
+  saveState();
+  renderGradeTypeTabs();
+  renderTable();
+  updateHeader();
 }
 
 function onCatChange() {
-    const val = document.getElementById("gradeTypeCat").value;
-    if (val) document.getElementById("gradeTypeName").value = val;
+  const val = document.getElementById("gradeTypeCat").value;
+  if (val) document.getElementById("gradeTypeName").value = val;
 }
 
 function createGradeType() {
-    const name = document.getElementById("gradeTypeName").value.trim();
-    if (!name) { toast("Bitte eine Bezeichnung eingeben!"); return; }
-
-    const c = currentCourse();
-    const id = uid();
-    c.gradeTypes.push({ id, name });
-    state.currentGradeTypeId = id;
-
-    saveState(); renderGradeTypeSelect(); renderTable();
-    closeModal("newGradeTypeModal");
-    toast('Notenart "' + name + '" angelegt.');
+  const name = document.getElementById("gradeTypeName").value.trim();
+  if (!name) { toast("Bitte eine Bezeichnung eingeben!"); return; }
+  pushHistory();
+  const c  = currentCourse();
+  const id = uid();
+  c.gradeTypes.push({ id, name });
+  state.currentGradeTypeId = id;
+  saveState();
+  closeModal("newGradeTypeModal");
+  renderGradeTypeTabs();
+  renderTable();
+  updateHeader();
+  toast('Notenart "' + name + '" angelegt.');
 }
 
-function deleteGradeType() {
-    const c = currentCourse();
-    if (c.gradeTypes.length <= 1) { toast("Mindestens eine Notenart muss vorhanden bleiben!"); return; }
-
-    const gt = currentGradeType();
-    if (!confirm('Notenart "' + gt.name + '" loeschen? Alle zugehoerigen Noten gehen verloren!')) return;
-
-    c.gradeTypes = c.gradeTypes.filter(g => g.id !== state.currentGradeTypeId);
-    c.students.forEach(s => {
-        if (c.grades[s]) delete c.grades[s][state.currentGradeTypeId];
-    });
-    state.currentGradeTypeId = c.gradeTypes[0].id;
-
-    saveState(); renderGradeTypeSelect(); renderTable();
-    toast("Notenart geloescht.");
+function deleteGradeTypeById(id) {
+  const c = currentCourse();
+  if (c.gradeTypes.length <= 1) { toast("Mindestens eine Notenart muss vorhanden bleiben!"); return; }
+  const gt = c.gradeTypes.find(g => g.id === id);
+  if (!confirm('Notenart "' + gt.name + '" löschen? Alle zugehörigen Noten gehen verloren!')) return;
+  pushHistory();
+  c.gradeTypes = c.gradeTypes.filter(g => g.id !== id);
+  c.students.forEach(s => { if (c.grades[s]) delete c.grades[s][id]; });
+  if (state.currentGradeTypeId === id) state.currentGradeTypeId = c.gradeTypes[0].id;
+  saveState();
+  renderGradeTypeTabs();
+  renderTable();
+  updateHeader();
+  toast("Notenart gelöscht.");
 }
 
-// =========================================================
-// SCHUELER-VERWALTUNG
-// =========================================================
+// =====================================================
+// SCHÜLER-VERWALTUNG
+// =====================================================
 function addStudent() {
-    const inp = document.getElementById("newStudentInput");
-    const name = inp.value.trim();
-    if (!name) { toast("Bitte einen Namen eingeben!"); return; }
-
-    const c = currentCourse();
-    if (c.students.includes(name)) { toast("Dieser Schueler ist bereits vorhanden!"); return; }
-
-    c.students.push(name);
-    inp.value = "";
-    saveState(); renderTable();
-    toast('"' + name + '" hinzugefuegt.');
+  const inp  = document.getElementById("newStudentInput");
+  const name = inp.value.trim();
+  if (!name) { toast("Bitte einen Namen eingeben!"); return; }
+  const c = currentCourse();
+  if (c.students.includes(name)) { toast("Dieser Schüler ist bereits vorhanden!"); return; }
+  pushHistory();
+  c.students.push(name);
+  inp.value = "";
+  saveState();
+  renderTable();
+  toast('"' + name + '" hinzugefügt.');
 }
 
 function removeStudent(name) {
-    if (!confirm('Schueler "' + name + '" entfernen?')) return;
-    const c = currentCourse();
-    c.students = c.students.filter(s => s !== name);
-    delete c.grades[name];
-    saveState(); renderTable();
+  if (!confirm('Schüler "' + name + '" entfernen?')) return;
+  pushHistory();
+  const c = currentCourse();
+  c.students = c.students.filter(s => s !== name);
+  delete c.grades[name];
+  saveState();
+  renderTable();
 }
 
-// =========================================================
+// =====================================================
 // NOTEN
-// =========================================================
+// =====================================================
 function getGrade(student, field) {
-    const c = currentCourse();
-    return c.grades?.[student]?.[state.currentGradeTypeId]?.[field] || STD_NOTE;
+  const c = currentCourse();
+  return c.grades?.[student]?.[state.currentGradeTypeId]?.[field] || STD_NOTE;
 }
 
 function setGrade(student, field, value) {
-    const c = currentCourse();
-    if (!c.grades[student]) c.grades[student] = {};
-    if (!c.grades[student][state.currentGradeTypeId]) c.grades[student][state.currentGradeTypeId] = {};
-    c.grades[student][state.currentGradeTypeId][field] = value;
-    saveState(); updateStats();
+  pushHistory();
+  const c = currentCourse();
+  if (!c.grades[student]) c.grades[student] = {};
+  if (!c.grades[student][state.currentGradeTypeId]) c.grades[student][state.currentGradeTypeId] = {};
+  c.grades[student][state.currentGradeTypeId][field] = value;
+  saveState();
+  updateStats();
+}
+
+function applyNoteColor(sel) {
+  const val   = sel.value;
+  const color = (val !== STD_NOTE && NOTE_COLORS[val]) ? NOTE_COLORS[val] : null;
+  sel.style.borderColor = color ? color + "55" : "";
+  sel.style.color       = color ? color : "";
 }
 
 function resetCurrentGrades() {
-    const gt = currentGradeType();
-    if (!gt) return;
-    if (!confirm('Alle Noten fuer "' + gt.name + '" zuruecksetzen?')) return;
-
-    const c = currentCourse();
-    c.students.forEach(s => {
-        if (c.grades[s]) delete c.grades[s][state.currentGradeTypeId];
-    });
-    saveState(); renderTable();
-    toast("Noten zurueckgesetzt.");
+  const gt = currentGradeType();
+  if (!gt) return;
+  if (!confirm('Alle Noten für "' + gt.name + '" zurücksetzen?')) return;
+  pushHistory();
+  const c = currentCourse();
+  c.students.forEach(s => { if (c.grades[s]) delete c.grades[s][state.currentGradeTypeId]; });
+  saveState();
+  renderTable();
+  toast("Noten zurückgesetzt.");
 }
 
-// =========================================================
+// =====================================================
 // TABELLE
-// =========================================================
+// =====================================================
 function renderTable() {
-    const c = currentCourse();
-    if (!c) return;
+  const c  = currentCourse();
+  const gt = currentGradeType();
 
-    const gt = currentGradeType();
-    document.getElementById("printKurs").textContent  = c.name;
-    document.getElementById("tableTitle").textContent = "Notenabgleich" + (gt ? ": " + gt.name : "");
+  document.getElementById("tableTitle").textContent =
+    "Notenabgleich" + (gt ? ": " + gt.name : "");
 
-    const tbody = document.getElementById("tableBody");
-    tbody.innerHTML = "";
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = "";
 
-    c.students.forEach(name => {
-        const tr = document.createElement("tr");
+  if (!c || !c.students.length) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 4;
+    td.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">📋</div>
+      <div class="empty-state-title">Keine Schüler vorhanden</div>
+      <div class="empty-state-sub">Schüler über das Eingabefeld oben hinzufügen</div>
+    </div>`;
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    updateStats();
+    return;
+  }
 
-        // Name
-        const tdN = document.createElement("td");
-        tdN.className = "col-name";
-        tdN.textContent = name;
-        tr.appendChild(tdN);
+  c.students.forEach((name, idx) => {
+    const tr = document.createElement("tr");
 
-        // Selbst + Lehrer
-        ["selbst", "lehrer"].forEach(field => {
-            const td  = document.createElement("td");
-            td.className = field === "selbst" ? "col-selbst" : "col-lehrer";
-            const sel = document.createElement("select");
-            sel.className = "note-sel";
-            const cur = getGrade(name, field);
-            NOTEN_OPT.forEach(n => {
-                const o = document.createElement("option");
-                o.value = n; o.textContent = n;
-                if (n === cur) o.selected = true;
-                sel.appendChild(o);
-            });
-            sel.addEventListener("change", () => setGrade(name, field, sel.value));
-            td.appendChild(sel);
-            tr.appendChild(td);
-        });
+    // Index + Name
+    const tdN = document.createElement("td");
+    tdN.className = "td-name";
+    tdN.innerHTML = `<span style="color:var(--text-3);font-size:0.72rem;margin-right:10px;font-variant-numeric:tabular-nums;">${String(idx+1).padStart(2,"0")}</span>${name}`;
+    tr.appendChild(tdN);
 
-        // Loeschen
-        const tdD = document.createElement("td");
-        tdD.className = "col-del no-print";
-        const btn = document.createElement("button");
-        btn.className = "btn-row-del";
-        btn.title = "Schueler entfernen";
-        btn.textContent = "x";
-        btn.onclick = () => removeStudent(name);
-        tdD.appendChild(btn);
-        tr.appendChild(tdD);
-
-        tbody.appendChild(tr);
+    // Selbst + Lehrer
+    ["selbst","lehrer"].forEach(field => {
+      const td  = document.createElement("td");
+      td.className = "td-grade " + (field === "selbst" ? "td-selbst" : "td-lehrer");
+      const sel = document.createElement("select");
+      sel.className = "note-sel";
+      const cur = getGrade(name, field);
+      NOTEN_OPT.forEach(n => {
+        const o = document.createElement("option");
+        o.value = n; o.textContent = n;
+        if (n === cur) o.selected = true;
+        sel.appendChild(o);
+      });
+      applyNoteColor(sel);
+      sel.addEventListener("change", () => {
+        setGrade(name, field, sel.value);
+        applyNoteColor(sel);
+      });
+      td.appendChild(sel);
+      tr.appendChild(td);
     });
 
-    updateStats();
+    // Delete
+    const tdD = document.createElement("td");
+    tdD.className = "td-del no-print";
+    const btn = document.createElement("button");
+    btn.className = "btn-row-del";
+    btn.title = "Schüler entfernen";
+    btn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg>`;
+    btn.onclick = () => removeStudent(name);
+    tdD.appendChild(btn);
+    tr.appendChild(tdD);
+
+    tbody.appendChild(tr);
+  });
+
+  updateStats();
 }
 
 function updateStats() {
-    const c  = currentCourse();
-    const bar = document.getElementById("statBar");
-    if (!c) { bar.innerHTML = ""; return; }
+  const c   = currentCourse();
+  const bar = document.getElementById("statBar");
+  if (!c) { bar.innerHTML = ""; return; }
 
-    const counts = {};
-    NOTEN_OPT.forEach(n => { if (n !== STD_NOTE) counts[n] = 0; });
-    c.students.forEach(s => {
-        const v = getGrade(s, "lehrer");
-        if (v !== STD_NOTE && counts[v] !== undefined) counts[v]++;
-    });
+  const counts = {};
+  NOTEN_OPT.forEach(n => { if (n !== STD_NOTE) counts[n] = 0; });
+  c.students.forEach(s => {
+    const v = getGrade(s, "lehrer");
+    if (v !== STD_NOTE && counts[v] !== undefined) counts[v]++;
+  });
 
-    bar.innerHTML = '<strong style="margin-right:6px;font-size:.78rem;">Lehrernoten:</strong>';
-    let any = false;
-    Object.entries(counts).forEach(([note, cnt]) => {
-        if (cnt > 0) {
-            any = true;
-            const sp = document.createElement("span");
-            sp.style.cssText = "display:flex;align-items:center;gap:3px;";
-            sp.innerHTML =
-                '<span class="stat-dot" style="background:' + (NOTE_COLORS[note]||"#ccc") + '"></span>' +
-                note + ": <strong>" + cnt + "</strong>";
-            bar.appendChild(sp);
-        }
-    });
-    if (!any) {
-        const sp = document.createElement("span");
-        sp.style.color = "#aaa";
-        sp.textContent = "Noch keine Noten eingetragen";
-        bar.appendChild(sp);
+  bar.innerHTML = `<span class="stat-label">Lehrernoten</span>`;
+  let any = false;
+  Object.entries(counts).forEach(([note, cnt]) => {
+    if (cnt > 0) {
+      any = true;
+      const sp = document.createElement("span");
+      sp.className = "stat-item";
+      sp.innerHTML = `<span class="stat-dot" style="background:${NOTE_COLORS[note]||"#666"}"></span>${note}<span class="stat-count">${cnt}</span>`;
+      bar.appendChild(sp);
     }
+  });
+  if (!any) {
+    const sp = document.createElement("span");
+    sp.className = "stat-empty";
+    sp.textContent = "Noch keine Lehrernoten eingetragen";
+    bar.appendChild(sp);
+  }
 }
 
-// =========================================================
-// EXCEL EXPORT (SheetJS)
-// =========================================================
+// =====================================================
+// EXCEL EXPORT
+// =====================================================
 function exportExcel() {
-    if (typeof XLSX === "undefined") {
-        toast("Excel-Bibliothek noch nicht geladen – bitte kurz warten.");
-        return;
-    }
-    const c  = currentCourse();
-    const gt = currentGradeType();
-    const wb = XLSX.utils.book_new();
+  if (typeof XLSX === "undefined") { toast("Excel-Bibliothek noch nicht geladen — kurz warten."); return; }
+  const c  = currentCourse();
+  const gt = currentGradeType();
+  const wb = XLSX.utils.book_new();
 
-    // Sheet 1: Aktuelle Notenart
-    const s1 = [
-        ["Kurs:", c.name, "", "Notenart:", gt ? gt.name : "---"],
-        ["Datum:", new Date().toLocaleDateString("de-DE")],
-        [],
-        ["Schueler", "Selbst", "Lehrer"]
-    ];
-    c.students.forEach(name => s1.push([name, getGrade(name, "selbst"), getGrade(name, "lehrer")]));
-    const ws1 = XLSX.utils.aoa_to_sheet(s1);
-    ws1["!cols"] = [{ wch: 22 }, { wch: 10 }, { wch: 10 }];
-    XLSX.utils.book_append_sheet(wb, ws1, (gt ? gt.name : "Noten").substring(0, 31));
+  const s1 = [
+    ["Kurs:", c.name,"","Notenart:", gt ? gt.name : "---"],
+    ["Datum:", new Date().toLocaleDateString("de-DE")],
+    [],
+    ["Schüler","Selbst","Lehrer"]
+  ];
+  c.students.forEach(name => s1.push([name, getGrade(name,"selbst"), getGrade(name,"lehrer")]));
+  const ws1 = XLSX.utils.aoa_to_sheet(s1);
+  ws1["!cols"] = [{wch:22},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws1, (gt ? gt.name : "Noten").substring(0,31));
 
-    // Sheet 2: Gesamtuebersicht
-    const hdr = ["Schueler"];
-    c.gradeTypes.forEach(g => { hdr.push(g.name + " (S)"); hdr.push(g.name + " (L)"); });
-    const s2 = [
-        ["Kurs:", c.name],
-        ["Datum:", new Date().toLocaleDateString("de-DE")],
-        [],
-        hdr
-    ];
-    c.students.forEach(name => {
-        const row = [name];
-        c.gradeTypes.forEach(g => {
-            row.push(c.grades?.[name]?.[g.id]?.selbst || "---");
-            row.push(c.grades?.[name]?.[g.id]?.lehrer || "---");
-        });
-        s2.push(row);
+  const hdr = ["Schüler"];
+  c.gradeTypes.forEach(g => { hdr.push(g.name+" (S)"); hdr.push(g.name+" (L)"); });
+  const s2 = [["Kurs:", c.name],["Datum:", new Date().toLocaleDateString("de-DE")],[],hdr];
+  c.students.forEach(name => {
+    const row = [name];
+    c.gradeTypes.forEach(g => {
+      row.push(c.grades?.[name]?.[g.id]?.selbst || "---");
+      row.push(c.grades?.[name]?.[g.id]?.lehrer || "---");
     });
-    const ws2 = XLSX.utils.aoa_to_sheet(s2);
-    ws2["!cols"] = hdr.map((_, i) => ({ wch: i === 0 ? 22 : 14 }));
-    XLSX.utils.book_append_sheet(wb, ws2, "Gesamtuebersicht");
+    s2.push(row);
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet(s2);
+  ws2["!cols"] = hdr.map((_,i) => ({wch: i===0?22:14}));
+  XLSX.utils.book_append_sheet(wb, ws2, "Gesamtübersicht");
 
-    const safe  = c.name.replace(/[^a-zA-Z0-9]/g, "_");
-    const datum = new Date().toLocaleDateString("de-DE").replace(/\./g, "-");
-    XLSX.writeFile(wb, "Noten_" + safe + "_" + datum + ".xlsx");
-    toast("Excel-Datei heruntergeladen.");
+  const safe  = c.name.replace(/[^a-zA-Z0-9]/g,"_");
+  const datum = new Date().toLocaleDateString("de-DE").replace(/\./g,"-");
+  XLSX.writeFile(wb, "Gradus_" + safe + "_" + datum + ".xlsx");
+  toast("Excel-Datei heruntergeladen.");
 }
 
-// =========================================================
-// BACKUP JSON
-// =========================================================
+// =====================================================
+// BACKUP
+// =====================================================
 function exportBackup() {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url;
-    a.download = "Notenerfassung_Backup_" + new Date().toLocaleDateString("de-DE").replace(/\./g, "-") + ".json";
-    a.click();
-    URL.revokeObjectURL(url);
-    toast("Backup gespeichert.");
+  const blob = new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url;
+  a.download = "Gradus_Backup_" + new Date().toLocaleDateString("de-DE").replace(/\./g,"-") + ".json";
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("Backup gespeichert.");
 }
 
 function triggerImport() { document.getElementById("importFileInput").click(); }
 
 function handleImportFile(evt) {
-    const file = evt.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-        try {
-            const imp = JSON.parse(e.target.result);
-            if (!imp.courses) throw new Error("Kein gueltiges Backup-Format");
-            if (!confirm("Backup laden? Aktuelle Daten werden ueberschrieben!")) return;
-
-            state = imp;
-            if (!state.courses[state.currentCourseId])
-                state.currentCourseId = Object.keys(state.courses)[0];
-            const c = currentCourse();
-            if (!c.gradeTypes.find(g => g.id === state.currentGradeTypeId))
-                state.currentGradeTypeId = c.gradeTypes[0]?.id || null;
-
-            saveState(); renderCourseSelect(); renderGradeTypeSelect(); renderTable();
-            toast("Backup geladen.");
-        } catch(err) { toast("Fehler: " + err.message); }
-    };
-    reader.readAsText(file);
-    evt.target.value = "";
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imp = JSON.parse(e.target.result);
+      if (!imp.courses) throw new Error("Kein gültiges Backup-Format");
+      if (!confirm("Backup laden? Aktuelle Daten werden überschrieben!")) return;
+      pushHistory();
+      state = imp;
+      if (!state.courses[state.currentCourseId]) state.currentCourseId = Object.keys(state.courses)[0];
+      const c = currentCourse();
+      if (!c.gradeTypes.find(g => g.id === state.currentGradeTypeId)) state.currentGradeTypeId = c.gradeTypes[0]?.id || null;
+      saveState();
+      renderAll();
+      toast("Backup geladen.");
+    } catch(err) { toast("Fehler: " + err.message); }
+  };
+  reader.readAsText(file);
+  evt.target.value = "";
 }
 
-// =========================================================
+// =====================================================
 // MODAL
-// =========================================================
+// =====================================================
 function showModal(id) {
-    if (id === "newCourseModal")    document.getElementById("newCourseName").value = "";
-    if (id === "newGradeTypeModal") {
-        document.getElementById("gradeTypeCat").value  = "";
-        document.getElementById("gradeTypeName").value = "";
-    }
-    document.getElementById(id).classList.add("show");
-    const inp = document.querySelector("#" + id + " input.ctrl");
-    if (inp) setTimeout(() => inp.focus(), 60);
+  if (id === "newCourseModal")    document.getElementById("newCourseName").value = "";
+  if (id === "newGradeTypeModal") {
+    document.getElementById("gradeTypeCat").value  = "";
+    document.getElementById("gradeTypeName").value = "";
+  }
+  document.getElementById(id).classList.add("show");
+  const inp = document.querySelector("#" + id + " input.input-field");
+  if (inp) setTimeout(() => inp.focus(), 60);
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove("show"); }
 
 document.querySelectorAll(".modal-overlay").forEach(el =>
-    el.addEventListener("click", e => { if (e.target === el) el.classList.remove("show"); })
+  el.addEventListener("click", e => { if (e.target === el) el.classList.remove("show"); })
 );
 document.addEventListener("keydown", e => {
-    if (e.key === "Escape")
-        document.querySelectorAll(".modal-overlay.show").forEach(el => el.classList.remove("show"));
+  if (e.key === "Escape")
+    document.querySelectorAll(".modal-overlay.show").forEach(el => el.classList.remove("show"));
+  if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+    e.preventDefault();
+    undo();
+  }
 });
 
-// =========================================================
+// =====================================================
 // TOAST
-// =========================================================
+// =====================================================
 let _tt = null;
 function toast(msg) {
-    const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.classList.add("show");
-    if (_tt) clearTimeout(_tt);
-    _tt = setTimeout(() => t.classList.remove("show"), 3000);
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  if (_tt) clearTimeout(_tt);
+  _tt = setTimeout(() => t.classList.remove("show"), 3000);
 }
 
-// =========================================================
+// =====================================================
+// PARTICLE NEBULA — CANVAS ANIMATION
+// =====================================================
+(function() {
+  const canvas = document.getElementById("crystalCanvas");
+  const ctx    = canvas.getContext("2d");
+
+  let particles  = [];
+  let mouse      = { x: 0, y: 0 };
+  let target     = { x: 0, y: 0 };
+
+  const COUNT = 95;
+
+  // Dark: indigo/blue/violet. Light: navy tones matching logo
+  const PALETTES = {
+    dark:  [[100,120,230],[80,105,210],[130,95,215],[65,145,225],[110,130,200]],
+    light: [[45,69,112],[55,85,140],[35,58,98],[70,100,155],[50,75,125]]
+  };
+
+  function isDark() {
+    return document.documentElement.getAttribute("data-theme") !== "light";
+  }
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    init();
+  }
+
+  function init() {
+    particles = Array.from({ length: COUNT }, () => {
+      const depth = 0.2 + Math.random() * 0.8;
+      const size  = (6 + Math.random() * 22) * (0.4 + depth * 0.6);
+      return {
+        bx: Math.random() * canvas.width,
+        by: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.12,
+        vy: (Math.random() - 0.5) * 0.12,
+        size,
+        depth,
+        alpha:       0.02 + Math.random() * 0.10,
+        alphaTarget: 0.02 + Math.random() * 0.10,
+        pulseIn:     Math.random() * 10,
+        colorIdx:    Math.floor(Math.random() * 5),
+      };
+    });
+  }
+
+  let last = 0;
+  function draw(ts) {
+    const dt = Math.min(ts - last, 50);
+    last = ts;
+
+    // Smooth parallax
+    mouse.x += (target.x - mouse.x) * 0.04;
+    mouse.y += (target.y - mouse.y) * 0.04;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const pal = PALETTES[isDark() ? "dark" : "light"];
+    const cx  = canvas.width  / 2;
+    const cy  = canvas.height / 2;
+
+    particles.forEach(p => {
+      // Drift
+      p.bx += p.vx * (dt / 16);
+      p.by += p.vy * (dt / 16);
+      if (p.bx < -60) p.bx = canvas.width  + 60;
+      if (p.bx > canvas.width  + 60) p.bx = -60;
+      if (p.by < -60) p.by = canvas.height + 60;
+      if (p.by > canvas.height + 60) p.by = -60;
+
+      // Parallax offset
+      const px = p.bx + (mouse.x - cx) * p.depth * 0.018;
+      const py = p.by + (mouse.y - cy) * p.depth * 0.018;
+
+      // Pulse
+      p.pulseIn -= dt * 0.001;
+      if (p.pulseIn <= 0) {
+        p.alphaTarget = isDark()
+          ? 0.03 + Math.random() * 0.13
+          : 0.04 + Math.random() * 0.10;
+        p.pulseIn = 3 + Math.random() * 7;
+      }
+      p.alpha += (p.alphaTarget - p.alpha) * Math.min(0.006 * dt, 0.3);
+
+      // Soft blob via radial gradient
+      const col  = pal[p.colorIdx];
+      const grad = ctx.createRadialGradient(px, py, 0, px, py, p.size);
+      grad.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${p.alpha})`);
+      grad.addColorStop(0.5, `rgba(${col[0]},${col[1]},${col[2]},${p.alpha * 0.4})`);
+      grad.addColorStop(1, `rgba(${col[0]},${col[1]},${col[2]},0)`);
+
+      ctx.beginPath();
+      ctx.arc(px, py, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener("resize", resize);
+  window.addEventListener("mousemove", e => { target.x = e.clientX; target.y = e.clientY; });
+
+  resize();
+  requestAnimationFrame(draw);
+})();
+
+// =====================================================
+// THEME TOGGLE
+// =====================================================
+function toggleTheme() {
+  const root    = document.documentElement;
+  const current = root.getAttribute("data-theme");
+  const next    = current === "light" ? "dark" : "light";
+  root.setAttribute("data-theme", next);
+  localStorage.setItem("gradus_theme", next);
+}
+
+(function applyStoredTheme() {
+  const saved = localStorage.getItem("gradus_theme");
+  if (saved) document.documentElement.setAttribute("data-theme", saved);
+})();
+
+// =====================================================
 // START
-// =========================================================
+// =====================================================
 init();
 </script>
 </body>
