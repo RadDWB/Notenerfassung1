@@ -108,6 +108,10 @@
     ============================================= */
     :root:not([data-theme="light"]) { color-scheme: dark; }
     [data-theme="light"] { color-scheme: light; }
+    :root:not([data-theme="light"]) select { color-scheme: dark; }
+    [data-theme="light"] select { color-scheme: light; background: #ffffff; color: #18181A; }
+    :root:not([data-theme="light"]) select option { background: #1C1E21; color: #F2F0EB; }
+    [data-theme="light"] select option { background: #ffffff; color: #18181A; }
 
     [data-theme="light"] {
       --bg:             #F2EFE9;
