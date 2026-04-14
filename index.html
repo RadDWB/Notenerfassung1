@@ -86,36 +86,20 @@
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
-    .brand-logo {
-      display: block;
-      height: 42px;
-      width: auto;
-      max-width: 210px;
-      border-radius: 7px;
-      padding: 5px 10px;
-      background: rgba(255,255,255,0.97);
-      box-shadow: 0 1px 0 rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.25);
-    }
-    [data-theme="light"] .brand-logo {
-      background: transparent;
-      box-shadow: none;
-      padding: 0;
-      height: 38px;
-    }
     .brand-fallback { display: none; }
     .brand-name {
       font-family: 'DM Serif Display', serif;
-      font-size: 1.6rem;
-      letter-spacing: -0.02em;
+      font-size: 2.1rem;
+      letter-spacing: -0.03em;
       color: var(--text-1);
       line-height: 1;
     }
     .brand-name span { color: var(--accent); }
     .brand-sub {
-      font-size: 0.65rem;
+      font-size: 0.63rem;
       color: var(--text-3);
-      margin-top: 5px;
-      letter-spacing: 0.06em;
+      margin-top: 6px;
+      letter-spacing: 0.07em;
       text-transform: uppercase;
     }
 
@@ -906,12 +890,8 @@
   <!-- ==================== SIDEBAR ==================== -->
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <img src="Gradus.png" alt="Gradus" class="brand-logo" id="brandLogo"
-           onerror="this.style.display='none';document.getElementById('brandFallback').style.display='block'">
-      <div class="brand-fallback" id="brandFallback">
-        <div class="brand-name">Grad<span>us</span></div>
-        <div class="brand-sub">Notenerfassung leicht gemacht</div>
-      </div>
+      <div class="brand-name">Grad<span>us</span></div>
+      <div class="brand-sub">Notenerfassung leicht gemacht</div>
     </div>
 
     <div class="sidebar-section-label">Kurse</div>
