@@ -88,16 +88,19 @@
     }
     .brand-logo {
       display: block;
-      height: 44px;
-      width: 200px;
-      background-color: var(--text-1);
-      -webkit-mask: url('Gradus.png') no-repeat left center / contain;
-      mask: url('Gradus.png') no-repeat left center / contain;
-      opacity: 0.92;
+      height: 42px;
+      width: auto;
+      max-width: 210px;
+      border-radius: 7px;
+      padding: 5px 10px;
+      background: rgba(255,255,255,0.97);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.25);
     }
     [data-theme="light"] .brand-logo {
-      background-color: var(--accent);
-      opacity: 1;
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+      height: 38px;
     }
     .brand-fallback { display: none; }
     .brand-name {
@@ -806,7 +809,8 @@
   <!-- ==================== SIDEBAR ==================== -->
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <div class="brand-logo" id="brandLogo"></div>
+      <img src="Gradus.png" alt="Gradus" class="brand-logo" id="brandLogo"
+           onerror="this.style.display='none';document.getElementById('brandFallback').style.display='block'">
       <div class="brand-fallback" id="brandFallback">
         <div class="brand-name">Grad<span>us</span></div>
         <div class="brand-sub">Notenerfassung leicht gemacht</div>
