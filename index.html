@@ -93,25 +93,41 @@
     }
 
     .sidebar-brand {
-      padding: 16px 18px 14px;
+      padding: 14px 18px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
     }
+    .brand-logo-svg {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .brand-logo-svg svg { width: 100%; height: 100%; }
     .brand-fallback { display: none; }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
     .brand-name {
       font-family: 'DM Serif Display', serif;
-      font-size: 2.1rem;
-      letter-spacing: -0.03em;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
       color: var(--text-1);
-      line-height: 1;
+      line-height: 1.1;
+      font-weight: 700;
     }
-    .brand-name span { color: var(--accent); }
     .brand-sub {
-      font-size: 0.63rem;
+      font-size: 0.6rem;
       color: var(--text-3);
-      margin-top: 6px;
-      letter-spacing: 0.07em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
+      font-weight: 500;
     }
 
     /* =============================================
@@ -398,7 +414,16 @@
       flex-shrink: 0;
       gap: 8px;
     }
-    .footer-left { display: flex; gap: 6px; align-items: center; }
+    .footer-left { display: flex; gap: 8px; align-items: center; }
+    .footer-logo-mini {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .footer-logo-mini svg { width: 100%; height: 100%; }
     .footer-link {
       color: var(--accent);
       text-decoration: none;
@@ -1056,8 +1081,33 @@
   <!-- ==================== SIDEBAR ==================== -->
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <div class="brand-name">Grad<span>us</span></div>
-      <div class="brand-sub">Notenerfassung leicht gemacht</div>
+      <div class="brand-logo-svg">
+        <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Runner (blue) -->
+          <circle cx="24" cy="10" r="3.5" fill="#0066CC" opacity="0.9"/>
+          <path d="M22 14L27 18L24 24L19 20Z" fill="#0066CC" opacity="0.9"/>
+          <path d="M19 24L24 28L22 34" stroke="#0066CC" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/>
+          <path d="M27 24L32 28L30 34" stroke="#0066CC" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/>
+
+          <!-- Ball (dark navy) -->
+          <circle cx="28" cy="28" r="3.5" fill="#001F3F"/>
+          <circle cx="28" cy="28" r="3.2" fill="none" stroke="#FFFFFF" stroke-width="0.8"/>
+
+          <!-- Steps (green gradient) -->
+          <rect x="12" y="30" width="24" height="4" fill="#1DB749" opacity="0.8" rx="1"/>
+          <path d="M12 30L16 26L20 26L24 22" stroke="#1DB749" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.8"/>
+
+          <!-- Stars (green accent) -->
+          <g opacity="0.8">
+            <path d="M33 14L34.5 18L39 18.5L35.5 21.5L36.5 26L33 23L29.5 26L30.5 21.5L27 18.5L31.5 18Z" fill="#1DB749"/>
+            <path d="M38.5 10L39 11.5L40.5 11.8L39.5 12.8L39.8 14.2L38.5 13.6L37.2 14.2L37.5 12.8L36.5 11.8L38 11.5Z" fill="#1DB749"/>
+          </g>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">GRADUS</div>
+        <div class="brand-sub">Noten erfasst</div>
+      </div>
     </div>
 
     <div class="sidebar-section-label">Kurse</div>
@@ -1102,10 +1152,22 @@
 
     <!-- Footer -->
     <div class="footer">
-      <div style="font-size:0.63rem;">Gradus v1.1</div>
+      <div class="footer-left">
+        <div class="footer-logo-mini">
+          <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="22" cy="10" r="2" fill="#C8F241"/>
+            <path d="M20 13L24 16L22 20L18 17Z" fill="#C8F241"/>
+            <path d="M18 20L22 23L20 27" stroke="#C8F241" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+            <path d="M24 20L28 23L26 27" stroke="#C8F241" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+            <circle cx="25" cy="23" r="2" fill="#1DB749" opacity="0.7"/>
+            <rect x="14" y="25" width="16" height="3" fill="#1DB749" opacity="0.7" rx="0.5"/>
+          </svg>
+        </div>
+        <span style="font-size:0.63rem;">Gradus v1.1</span>
+      </div>
       <div style="text-align:right;font-size:0.63rem;">
         <div>© 2026 <a href="https://straightedge.media" target="_blank" class="footer-link">Ralf Duwenbeck</a></div>
-        <div style="color:var(--text-3);">straight edge media</div>
+        <div style="color:var(--text-3);font-size:0.6rem;">straight edge media</div>
       </div>
     </div>
   </aside>
