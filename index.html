@@ -1102,11 +1102,7 @@
 
     <!-- Footer -->
     <div class="footer">
-      <div class="footer-left">
-        <span>Gradus v1.1</span>
-        <span>·</span>
-        <a href="javascript:showModal('privacyModal')" class="footer-link" title="Datenschutz & Info">🔒 Info</a>
-      </div>
+      <div style="font-size:0.63rem;">Gradus v1.1</div>
       <div style="text-align:right;font-size:0.63rem;">
         <div>© 2026 <a href="https://straightedge.media" target="_blank" class="footer-link">Ralf Duwenbeck</a></div>
         <div style="color:var(--text-3);">straight edge media</div>
@@ -1125,6 +1121,10 @@
         <span class="header-gt" id="headerGtName">—</span>
       </div>
       <span class="header-date" id="headerDate"></span>
+      <button class="btn" style="font-size:0.74rem;" onclick="showModal('privacyModal')" title="Datenschutz und Nutzungshinweise">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v4M8 12h.01"/></svg>
+        Datenschutz
+      </button>
       <button class="theme-toggle no-print" onclick="toggleTheme()" title="Hell/Dunkel wechseln">
         <svg class="icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M13 9.5A5.5 5.5 0 016.5 3a5.5 5.5 0 100 10A5.5 5.5 0 0013 9.5z"/></svg>
         <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.22 3.22l1.42 1.42M11.36 11.36l1.42 1.42M3.22 12.78l1.42-1.42M11.36 4.64l1.42-1.42"/></svg>
@@ -1265,10 +1265,10 @@ Schmidt, Ben
   </div>
 </div>
 
-<!-- Modal: Datenschutz & Info -->
+<!-- Modal: Datenschutz & Nutzungshinweise -->
 <div class="modal-overlay" id="privacyModal">
   <div class="modal" style="max-width:650px;max-height:90vh;overflow-y:auto;">
-    <div class="modal-title">🔒 Datenschutz & Hinweise</div>
+    <div class="modal-title">🔒 Datenschutz & Nutzungshinweise</div>
 
     <div style="font-size:0.82rem;color:var(--text-2);line-height:1.7;display:flex;flex-direction:column;gap:16px;">
 
@@ -1604,7 +1604,7 @@ function deleteCourseById(id) {
   const keys = Object.keys(state.courses);
   if (keys.length <= 1) { toast("Mindestens ein Kurs muss vorhanden bleiben!"); return; }
   const c = state.courses[id];
-  if (!confirm('Kurs "' + c.name + '" wirklich löschen? Alle Noten gehen verloren!')) return;
+  if (!confirm('⚠️ KURS LÖSCHEN: "' + c.name + '"\n\n❌ ALLE Schüler und Noten werden UNWIEDERBRINGLICH gelöscht!\n✓ Nur machen wenn vorher Backup gespeichert!\n\nWirklich löschen?')) return;
   pushHistory();
   delete state.courses[id];
   if (state.currentCourseId === id) {
@@ -1687,7 +1687,7 @@ function deleteGradeTypeById(id) {
   const c = currentCourse();
   if (c.gradeTypes.length <= 1) { toast("Mindestens eine Notenart muss vorhanden bleiben!"); return; }
   const gt = c.gradeTypes.find(g => g.id === id);
-  if (!confirm('Notenart "' + gt.name + '" löschen? Alle zugehörigen Noten gehen verloren!')) return;
+  if (!confirm('⚠️ NOTENART LÖSCHEN: "' + gt.name + '"\n\n❌ ALLE Noten dieser Art werden UNWIEDERBRINGLICH gelöscht!\n(Betrifft ALLE Schüler)\n\nWirklich löschen?')) return;
   pushHistory();
   c.gradeTypes = c.gradeTypes.filter(g => g.id !== id);
   c.students.forEach(s => { if (c.grades[s]) delete c.grades[s][id]; });
@@ -1717,7 +1717,7 @@ function addStudent() {
 }
 
 function removeStudent(name) {
-  if (!confirm('Schüler "' + name + '" entfernen?')) return;
+  if (!confirm('⚠️ SCHÜLER LÖSCHEN: "' + name + '"\n\n❌ ALLE Noten für diesen Schüler werden gelöscht!\n\nWirklich entfernen?')) return;
   pushHistory();
   const c = currentCourse();
   c.students = c.students.filter(s => s !== name);
@@ -1767,7 +1767,7 @@ function applyNoteColor(sel) {
 function resetCurrentGrades() {
   const gt = currentGradeType();
   if (!gt) return;
-  if (!confirm('Alle Noten für "' + gt.name + '" zurücksetzen?')) return;
+  if (!confirm('⚠️ ALLE NOTEN ZURÜCKSETZEN: "' + gt.name + '"\n\n❌ Alle eingetragenen Noten werden GELÖSCHT!\n(Betrifft ALLE Schüler dieser Notenart)\n✓ Rückgängig-Button (Strg+Z) hilft nur einmal!\n\nWirklich alle löschen?')) return;
   pushHistory();
   const c = currentCourse();
   c.students.forEach(s => { if (c.grades[s]) delete c.grades[s][state.currentGradeTypeId]; });
@@ -1969,7 +1969,7 @@ function handleImportFile(evt) {
     try {
       const imp = JSON.parse(e.target.result);
       if (!imp.courses) throw new Error("Kein gültiges Backup-Format");
-      if (!confirm("Backup laden? Aktuelle Daten werden überschrieben!")) return;
+      if (!confirm('⚠️ BACKUP LADEN\n\n❌ ALLE aktuellen Daten werden ÜBERSCHRIEBEN!\n✓ Vorher aktuellen Stand sichern!\n\nWirklich dieses Backup laden?')) return;
       pushHistory();
       state = imp;
       if (!state.courses[state.currentCourseId]) state.currentCourseId = Object.keys(state.courses)[0];
