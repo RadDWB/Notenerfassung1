@@ -385,6 +385,29 @@
     .sidebar-action-btn svg { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.7; }
 
     /* =============================================
+       FOOTER
+    ============================================= */
+    .footer {
+      padding: 8px 18px;
+      border-top: 1px solid var(--border);
+      font-size: 0.65rem;
+      color: var(--text-3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      gap: 8px;
+    }
+    .footer-left { display: flex; gap: 6px; align-items: center; }
+    .footer-link {
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      transition: opacity 0.12s;
+    }
+    .footer-link:hover { opacity: 0.8; }
+
+    /* =============================================
        MAIN
     ============================================= */
     .main {
@@ -1076,6 +1099,19 @@
       </button>
       <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(event)">
     </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-left">
+        <span>Gradus v1.1</span>
+        <span>·</span>
+        <a href="javascript:showModal('privacyModal')" class="footer-link" title="Datenschutz & Info">🔒 Info</a>
+      </div>
+      <div style="text-align:right;font-size:0.63rem;">
+        <div>© 2026 <a href="https://straightedge.media" target="_blank" class="footer-link">Ralf Duwenbeck</a></div>
+        <div style="color:var(--text-3);">straight edge media</div>
+      </div>
+    </div>
   </aside>
 
   <!-- ==================== MAIN ==================== -->
@@ -1225,6 +1261,88 @@ Schmidt, Ben
     <div class="modal-btns">
       <button class="btn" onclick="closeModal('newGradeTypeModal')">Abbrechen</button>
       <button class="btn btn-accent" onclick="createGradeType()">Anlegen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Datenschutz & Info -->
+<div class="modal-overlay" id="privacyModal">
+  <div class="modal" style="max-width:650px;max-height:90vh;overflow-y:auto;">
+    <div class="modal-title">🔒 Datenschutz & Hinweise</div>
+
+    <div style="font-size:0.82rem;color:var(--text-2);line-height:1.7;display:flex;flex-direction:column;gap:16px;">
+
+      <div style="background:rgba(200,242,65,0.1);border:1px solid rgba(200,242,65,0.2);padding:12px;border-radius:var(--radius);">
+        <div style="font-weight:600;color:var(--accent);margin-bottom:6px;">⚠️ Wichtig: Datenschutz</div>
+        <div style="font-size:0.78rem;color:var(--text-1);">
+          <strong>Alle Daten werden AUSSCHLIESSLICH lokal in Ihrem Browser gespeichert.</strong> Es werden nie Daten ins Internet, auf Server oder zu Dritten übertragen. Ihre Noten bleiben privat auf diesem Gerät.
+        </div>
+      </div>
+
+      <div>
+        <div style="font-weight:600;color:var(--text-1);margin-bottom:8px;">📱 Wo werden Daten gespeichert?</div>
+        <ul style="margin:0;padding-left:18px;font-size:0.78rem;">
+          <li>Lokal im Browser-Speicher (localStorage)</li>
+          <li>Nur auf diesem Gerät, in diesem Browser</li>
+          <li>Nicht synchronisiert zwischen Geräten</li>
+          <li>Nicht mit Cloud/Server verbunden</li>
+          <li>Löschen des Browser-Cache löscht auch alle Daten</li>
+        </ul>
+      </div>
+
+      <div>
+        <div style="font-weight:600;color:var(--text-1);margin-bottom:8px;">💾 Wie sichert man Daten?</div>
+        <ul style="margin:0;padding-left:18px;font-size:0.78rem;">
+          <li><strong>JSON-Backup:</strong> Nutze "Backup speichern" in der Sidebar → lokal speichern</li>
+          <li><strong>Auf mehreren Geräten:</strong> Backup laden (Sidebar) auf neuem Gerät</li>
+          <li><strong>Excel-Export:</strong> "Excel exportieren" für Tabellenkalkulation oder Archivierung</li>
+          <li><strong>PDF-Druck:</strong> "PDF / Drucken" für gedruckte Unterlagen</li>
+        </ul>
+      </div>
+
+      <div>
+        <div style="font-weight:600;color:var(--text-1);margin-bottom:8px;">📋 Wie importiert man Schülerlisten?</div>
+        <ul style="margin:0;padding-left:18px;font-size:0.78rem;">
+          <li><strong>Format:</strong> Excel (.xlsx, .xls) oder CSV erforderlich</li>
+          <li><strong>Struktur:</strong> Erste Spalte = Schülernamen (einer pro Zeile)</li>
+          <li><strong>Header:</strong> Automatisch erkannt (z.B. "Name", "Schüler", "Vorname")</li>
+          <li><strong>Button:</strong> "Liste importieren" in der Toolbar</li>
+          <li><strong>Beispiel:</strong> Nachname, Vorname | oder einfach: Max Mustermann</li>
+        </ul>
+      </div>
+
+      <div>
+        <div style="font-weight:600;color:var(--text-1);margin-bottom:8px;">🔄 Änderungen zurückgängig machen</div>
+        <ul style="margin:0;padding-left:18px;font-size:0.78rem;">
+          <li><strong>Rückgängig-Button:</strong> Max. 25 letzte Aktionen</li>
+          <li><strong>Tastatur:</strong> Strg+Z (Windows) oder Cmd+Z (Mac)</li>
+          <li><strong>Noten zurücksetzen:</strong> Alle Noten der aktuellen Art löschen</li>
+        </ul>
+      </div>
+
+      <div>
+        <div style="font-weight:600;color:var(--text-1);margin-bottom:8px;">🎯 Tipps & Tricks</div>
+        <ul style="margin:0;padding-left:18px;font-size:0.78rem;">
+          <li><strong>Kurs umbenennen:</strong> Doppelklick auf Kursname in der Sidebar</li>
+          <li><strong>Mehrere Kurse:</strong> "Neuer Kurs" Button → Kurse isoliert verwalten</li>
+          <li><strong>Notenarten:</strong> "Notenart" Tab mit Vorlagen (Halbjahr, Prüfung, etc.)</li>
+          <li><strong>Farbcodes:</strong> Noten farblich gekennzeichnet (1+ grün, 6 rot)</li>
+          <li><strong>Dark/Light Mode:</strong> Oben rechts im Header umschalten</li>
+          <li><strong>Kommentare:</strong> Pro Schüler beliebig lange Notizen (120 Zeichen max.)</li>
+        </ul>
+      </div>
+
+      <div style="background:rgba(255,95,95,0.08);border:1px solid rgba(255,95,95,0.2);padding:12px;border-radius:var(--radius);">
+        <div style="font-weight:600;color:var(--danger);margin-bottom:6px;">⚡ Warnung: Datenverlust</div>
+        <div style="font-size:0.78rem;">
+          Browser-Daten können gelöscht werden durch: Browserverlauf löschen, Cache leeren, Browser-Einstellungen. <strong>Regelmäßig Backups speichern!</strong>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn btn-accent" onclick="closeModal('privacyModal')">Verstanden</button>
     </div>
   </div>
 </div>
