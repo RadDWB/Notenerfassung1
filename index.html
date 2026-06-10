@@ -242,6 +242,26 @@
     .menu-toggle:hover { background: var(--surface-hover); color: var(--text-1); }
     .menu-toggle svg { width: 18px; height: 18px; }
 
+    /* Close button inside the drawer (mobile only) */
+    .sidebar-close {
+      display: none;
+      margin-left: auto;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text-2);
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+      transition: background 0.12s, color 0.12s;
+    }
+    .sidebar-close:hover { background: var(--surface-hover); color: var(--text-1); }
+    .sidebar-close svg { width: 16px; height: 16px; }
+
     /* Backdrop behind the mobile sidebar drawer */
     .sidebar-backdrop {
       display: none;
@@ -1016,8 +1036,18 @@
       .analytics-grid { grid-template-columns: 1fr; }
       .brand-logo { height: 50px; }
 
-      /* Show hamburger, turn sidebar into off-canvas drawer */
+      /* Show hamburger + in-drawer close button, turn sidebar into off-canvas drawer */
       .menu-toggle { display: inline-flex; }
+      .sidebar-close { display: inline-flex; }
+
+      /* Shrink the intro video so it doesn't fill / crop the whole phone screen */
+      .intro-video {
+        width: 88%;
+        height: auto;
+        max-height: 60vh;
+        object-fit: contain;
+        border-radius: 12px;
+      }
 
       .sidebar {
         position: fixed;
@@ -1147,6 +1177,9 @@
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <img src="GradusHead.png" alt="GRADUS" class="brand-logo">
+      <button class="sidebar-close no-print" onclick="closeSidebar()" aria-label="Menü schließen" title="Menü schließen">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
     </div>
 
     <div class="sidebar-section-label">Kurse</div>
