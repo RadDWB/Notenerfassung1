@@ -223,9 +223,9 @@
     [data-theme="light"] .icon-moon { display: none; }
     [data-theme="light"] .icon-sun  { display: block; }
 
-    /* Hamburger / mobile menu toggle (hidden on desktop) */
+    /* Hamburger menu toggle — visible on all sizes */
     .menu-toggle {
-      display: none;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       width: 34px;
@@ -274,6 +274,12 @@
       transition: opacity 0.25s;
     }
     .sidebar-backdrop.show { display: block; opacity: 1; }
+
+    /* Desktop (>800px): collapse / expand the sidebar in place via the hamburger */
+    @media (min-width: 801px) {
+      .sidebar { transition: margin-left 0.26s cubic-bezier(0.16,1,0.3,1); }
+      .sidebar.collapsed { margin-left: calc(-1 * var(--sidebar-w)); }
+    }
 
     /* localStorage badge */
     .storage-badge {
@@ -561,6 +567,14 @@
       transition: all 0.12s;
     }
     .btn-new-gt:hover { background: var(--accent-dim); border-color: rgba(200,242,65,0.4); }
+
+    /* Drag-and-drop reordering of grade-type tabs */
+    .gt-tab { touch-action: none; user-select: none; }
+    .gt-tab.gt-dragging {
+      opacity: 0.55;
+      cursor: grabbing;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    }
 
     /* =============================================
        TOOLBAR
@@ -1772,11 +1786,16 @@ function renderGradeTypeTabs() {
     del.title = "Notenart löschen";
     del.addEventListener("click", (e) => { e.stopPropagation(); deleteGradeTypeById(gt.id); });
 
+    tab.dataset.gtId = gt.id;
+    tab.title = "Zum Umsortieren ziehen";
+
     tab.appendChild(label);
     tab.appendChild(del);
     tab.addEventListener("click", (e) => {
+      if (_suppressTabClick) return;            // ignore the click that ends a drag
       if (!e.target.matches('.gt-tab-del')) selectGradeType(gt.id);
     });
+    enableTabDrag(tab, bar);
     bar.appendChild(tab);
   });
 
@@ -1793,6 +1812,70 @@ function selectGradeType(id) {
   renderGradeTypeTabs();
   renderTable();
   updateHeader();
+}
+
+// --- Drag-and-drop reordering of grade-type tabs (mouse + touch) ---
+let _suppressTabClick = false;
+
+function enableTabDrag(tab, bar) {
+  tab.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".gt-tab-del")) return;          // delete button, not a drag
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const startX = e.clientX, startY = e.clientY;
+    const pid = e.pointerId;
+    let dragging = false;
+
+    const onMove = (ev) => {
+      if (!dragging) {
+        if (Math.abs(ev.clientX - startX) < 6 && Math.abs(ev.clientY - startY) < 6) return;
+        dragging = true;
+        tab.classList.add("gt-dragging");
+        try { tab.setPointerCapture(pid); } catch (_) {}
+      }
+      const ref = tabAfterPoint(bar, ev.clientX, ev.clientY);
+      if (ref == null) bar.insertBefore(tab, bar.querySelector(".btn-new-gt"));
+      else if (ref !== tab) bar.insertBefore(tab, ref);
+    };
+
+    const finish = () => {
+      tab.removeEventListener("pointermove", onMove);
+      tab.removeEventListener("pointerup", finish);
+      tab.removeEventListener("pointercancel", finish);
+      try { tab.releasePointerCapture(pid); } catch (_) {}
+      if (dragging) {
+        tab.classList.remove("gt-dragging");
+        commitTabOrder(bar);
+        _suppressTabClick = true;
+        setTimeout(() => { _suppressTabClick = false; }, 60);
+      }
+    };
+
+    tab.addEventListener("pointermove", onMove);
+    tab.addEventListener("pointerup", finish);
+    tab.addEventListener("pointercancel", finish);
+  });
+}
+
+// First non-dragged tab on the pointer's row whose left half is past the cursor.
+function tabAfterPoint(bar, x, y) {
+  const tabs = [...bar.querySelectorAll(".gt-tab:not(.gt-dragging)")];
+  for (const t of tabs) {
+    const r = t.getBoundingClientRect();
+    if (y >= r.top && y <= r.bottom && x < r.left + r.width / 2) return t;
+  }
+  return null;
+}
+
+// Persist the new tab order from the DOM back into the data model.
+function commitTabOrder(bar) {
+  const c = currentCourse();
+  if (!c) return;
+  const ids = [...bar.querySelectorAll(".gt-tab")].map(t => t.dataset.gtId);
+  if (ids.join("|") === c.gradeTypes.map(g => g.id).join("|")) return;  // unchanged
+  pushHistory();
+  c.gradeTypes.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+  saveState();
+  toast("Reihenfolge geändert.");
 }
 
 function onCatChange() {
@@ -2204,13 +2287,18 @@ document.addEventListener('click', () => {
 });
 
 // =====================================================
-// MOBILE SIDEBAR DRAWER
+// SIDEBAR TOGGLE (desktop: collapse in place · mobile: slide-in drawer)
 // =====================================================
 function toggleSidebar() {
   const sb = document.getElementById("sidebar");
   const bd = document.getElementById("sidebarBackdrop");
-  const open = sb.classList.toggle("open");
-  bd.classList.toggle("show", open);
+  if (window.innerWidth > 800) {
+    sb.classList.toggle("collapsed");   // desktop: hide/show in place
+    bd.classList.remove("show");
+  } else {
+    const open = sb.classList.toggle("open");  // mobile: off-canvas drawer
+    bd.classList.toggle("show", open);
+  }
 }
 function closeSidebar() {
   document.getElementById("sidebar").classList.remove("open");
