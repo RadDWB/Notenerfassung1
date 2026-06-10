@@ -223,6 +223,38 @@
     [data-theme="light"] .icon-moon { display: none; }
     [data-theme="light"] .icon-sun  { display: block; }
 
+    /* Hamburger / mobile menu toggle (hidden on desktop) */
+    .menu-toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text-2);
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+      transition: background 0.12s, color 0.12s;
+    }
+    .menu-toggle:hover { background: var(--surface-hover); color: var(--text-1); }
+    .menu-toggle svg { width: 18px; height: 18px; }
+
+    /* Backdrop behind the mobile sidebar drawer */
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(2px);
+      z-index: 1090;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .sidebar-backdrop.show { display: block; opacity: 1; }
+
     /* localStorage badge */
     .storage-badge {
       display: flex;
@@ -983,6 +1015,41 @@
     @media (max-width: 800px) {
       .analytics-grid { grid-template-columns: 1fr; }
       .brand-logo { height: 50px; }
+
+      /* Show hamburger, turn sidebar into off-canvas drawer */
+      .menu-toggle { display: inline-flex; }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(84vw, 300px);
+        min-width: 0;
+        transform: translateX(-100%);
+        transition: transform 0.26s cubic-bezier(0.16,1,0.3,1);
+        z-index: 1100;
+        box-shadow: 0 0 40px rgba(0,0,0,0.5);
+      }
+      .sidebar.open { transform: translateX(0); }
+
+      /* Modals must sit above the drawer */
+      .modal-overlay { z-index: 1200; }
+
+      /* Tighter header & content on small screens */
+      .header { padding: 0 14px; gap: 8px; overflow: hidden; }
+      .header-breadcrumb { min-width: 0; }
+      .header-date { display: none; }
+      .content { padding: 16px 14px; }
+
+      /* No hover on touch → keep management controls visible & tappable */
+      .course-item-del { opacity: 0.55; padding: 4px 8px; }
+      .gt-tab .gt-tab-del { opacity: 0.55; }
+      .gt-tab.active .gt-tab-del { opacity: 0.6; }
+
+      /* Larger tap targets for grade-type tabs */
+      .gt-tab { padding: 7px 14px; font-size: 0.8rem; }
+      .btn-new-gt { padding: 7px 14px; font-size: 0.78rem; }
     }
     .stat-card {
       background: var(--surface-raised);
@@ -1073,8 +1140,11 @@
 
 <div class="layout">
 
+  <!-- Mobile drawer backdrop -->
+  <div class="sidebar-backdrop no-print" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
   <!-- ==================== SIDEBAR ==================== -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <img src="GradusHead.png" alt="GRADUS" class="brand-logo">
     </div>
@@ -1134,6 +1204,9 @@
 
     <!-- Header -->
     <div class="header">
+      <button class="menu-toggle no-print" id="menuToggle" onclick="toggleSidebar()" aria-label="Menü öffnen" title="Menü">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4.5h14M2 9h14M2 13.5h14"/></svg>
+      </button>
       <div class="header-breadcrumb">
         <span class="header-course" id="headerCourseName">—</span>
         <span class="header-sep">/</span>
@@ -1602,6 +1675,7 @@ function selectCourse(id) {
   state.currentGradeTypeId = c.gradeTypes[0]?.id || null;
   saveState();
   renderAll();
+  closeSidebar();
 }
 
 function createCourse() {
@@ -2097,9 +2171,28 @@ document.addEventListener('click', () => {
 });
 
 // =====================================================
+// MOBILE SIDEBAR DRAWER
+// =====================================================
+function toggleSidebar() {
+  const sb = document.getElementById("sidebar");
+  const bd = document.getElementById("sidebarBackdrop");
+  const open = sb.classList.toggle("open");
+  bd.classList.toggle("show", open);
+}
+function closeSidebar() {
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("sidebarBackdrop").classList.remove("show");
+}
+// Reset drawer state when leaving the mobile breakpoint
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 800) closeSidebar();
+});
+
+// =====================================================
 // MODAL
 // =====================================================
 function showModal(id) {
+  closeSidebar();
   if (id === "newCourseModal")    document.getElementById("newCourseName").value = "";
   if (id === "newGradeTypeModal") {
     document.getElementById("gradeTypeCat").value  = "";
@@ -2117,8 +2210,10 @@ document.querySelectorAll(".modal-overlay").forEach(el =>
   el.addEventListener("click", e => { if (e.target === el) el.classList.remove("show"); })
 );
 document.addEventListener("keydown", e => {
-  if (e.key === "Escape")
+  if (e.key === "Escape") {
     document.querySelectorAll(".modal-overlay.show").forEach(el => el.classList.remove("show"));
+    closeSidebar();
+  }
   if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
     e.preventDefault();
     undo();
